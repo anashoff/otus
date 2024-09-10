@@ -76,3 +76,5 @@ end
 ```
 
 Ядро обновлено
+
+На github выложен [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson2/Vagrantfile), использованный в этом задании.
