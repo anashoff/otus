@@ -1,0 +1,8 @@
+---
+- name: Prepare disks
+  shell: "mdadm --zero-superblock --force {{ array_disks | join(' ') }}"
+- name: Create Raid
+  shell: "yes | mdadm --create {{ array_device }} --level={{ array_level }} --raid-devices={{ array_disks | count }} {{ array_disks | join(' ') }}"
+- name: Create config
+  shell: "echo DEVICE partitions > {{mdadm_conf_path}} && mdadm --verbose --detail --scan | awk '/ARRAY/ {print}' >> {{mdadm_conf_path}}"
+...

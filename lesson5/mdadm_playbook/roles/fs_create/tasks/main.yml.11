@@ -1,0 +1,22 @@
+---
+- name: GPT Create
+  parted: 
+    device: /dev/md0
+    part_type: extended
+    label: gpt
+    name: GPT
+    number: 1
+    state: present
+
+- name: Partition create
+  parted:
+    device: /dev/md0
+    label: gpt
+    number: "{{ item.number }}"
+    part_start: "{{ item.start }}%"
+    part_end: "{{ item.end }}%"
+    part_type: primary
+    fs_type: ext4
+    state: present
+  loop: "{{ partitions }}"
+

@@ -1,0 +1,11 @@
+---
+- name: Set disk as faulty
+  shell: "mdadm -f {{ array_name }} {{ fail_disk }}"
+  tags: service
+- name: Remove faulty disk
+  shell: "mdadm -r {{ array_name }} {{ fail_disk }}"
+  tags: service
+- name: Add new disk
+  shell: "mdadm -a {{ array_name }} {{ good_disk }}"
+  tags: service
+...

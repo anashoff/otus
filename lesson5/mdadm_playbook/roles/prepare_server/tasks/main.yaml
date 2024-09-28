@@ -1,0 +1,5 @@
+---
+- name: install mdadm and tools
+  package:
+    name: mdadm, smartmontools, hdparm, gdisk
+    state: present

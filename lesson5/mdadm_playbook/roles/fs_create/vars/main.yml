@@ -1,0 +1,17 @@
+---
+partitions:
+  - number: 1
+    start: "0"
+    end: "20"
+  - number: 2
+    start: "20"
+    end: "40"
+  - number: 3
+    start: "40"
+    end: "60"
+  - number: 4
+    start: "60"
+    end: "80"
+  - number: 5
+    start: "80"
+    end: "100"

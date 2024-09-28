@@ -1,0 +1,3 @@
+array_name: "/dev/md0"
+fail_disk: "/dev/sdd"
+good_disk: "/dev/sdg"

@@ -1,0 +1,12 @@
+---
+array_device: /dev/md0
+array_disks: 
+  - /dev/sdb
+  - /dev/sdc
+  - /dev/sdd
+  - /dev/sde
+  - /dev/sdf
+array_level: 6 
+array_filesystem: ext4
+array_mountpoint: /mnt/raid
+...

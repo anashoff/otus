@@ -1,0 +1,25 @@
+---
+- name: GPT Create
+  shell: " parted -s /dev/md0 mklabel gpt"
+- name: Create partitions
+  shell: "parted -s /dev/md0 mkpart primary ext4 {{ item.start }}% {{ item.end }}%"
+  loop: "{{ partitions }}"
+- name: Make FS
+  filesystem:
+    fstype: ext4
+    device: "/dev/md0p{{ item.number }}"
+    state: present
+  loop: "{{ partitions }}"
+- name: Create mountpoints
+  file: 
+    path: "/mnt/part{{ item.number }}"
+    state: directory
+  loop: "{{ partitions }}"
+- name: Mount 
+  mount:
+   src: "/dev/md0p{{ item.number }}"
+   path: "/mnt/part{{ item.number }}"
+   fstype: ext4
+   state: present
+  loop: "{{ partitions }}"
+...

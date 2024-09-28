@@ -1,0 +1,11 @@
+---
+- name: Raid install
+  hosts: otuslinux
+  gather_facts: true
+  become: yes
+  roles:
+    - prepare_server
+    - array_create
+    - fs_create
+    - mdraid_replace_disk
+...
