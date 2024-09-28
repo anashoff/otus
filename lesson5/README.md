@@ -395,6 +395,13 @@ partitions:
   shell: "mdadm -a {{ array_name }} {{ good_disk }}"
   tags: service
 ```
+и файл ```mdraid_replace_disk/vars/main.yaml```
+
+```yaml
+array_name: "/dev/md0"
+fail_disk: "/dev/sdd"
+good_disk: "/dev/sdg"
+```
 
 Задачи в плей:
 
