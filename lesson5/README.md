@@ -231,7 +231,7 @@ otuslinux ansible_port=2222 ansible_host=127.0.0.1 ansible_username=vagrant
 
 ### Подготовка сервера
 
-#### Роль prepare_server
+#### Плей prepare_server
 
 Создаем ```prepare_server/tasks/main.yaml```
 
@@ -242,13 +242,13 @@ otuslinux ansible_port=2222 ansible_host=127.0.0.1 ansible_username=vagrant
     state: present
 ```
 
-Задачи в роли:
+Задачи в плей:
 
 - install mdadm and tools - устанавливаем mdadm и утилиты
 
 ### Собираем рейд на выбор (raid6) и прописываем в конфигурацию
 
-#### Роль array_create
+#### Плей array_create
 
 Создаем ```array_create/defaults/main.yaml```
 
@@ -282,7 +282,7 @@ array_mountpoint: /mnt/raid
   shell: "echo DEVICE partitions > {{mdadm_conf_path}} && mdadm --verbose --detail --scan | awk '/ARRAY/ {print}' >> {{mdadm_conf_path}}"
 ```
 
-Задачи в роли:
+Задачи в плей:
 
 - Prepare disks - зануляем суперблоки
 - Create raid - собираем рейд 6 уровня из 5 дисков
@@ -290,7 +290,7 @@ array_mountpoint: /mnt/raid
 
 ### Создаем раздел gpt, 5 разделов и файловую систему
 
-#### Роль fs_create
+#### Плей fs_create
 
 Создаем файл ```fs_create/vars/main.yaml```
 
@@ -370,7 +370,7 @@ partitions:
   loop: "{{ partitions }}"
 ```
 
-Задачи в роли:
+Задачи в плей:
 
 - GPT Create - создание раздела gpt
 - Create partitions - создание 5 разделов размером по 20% в цикле
@@ -380,7 +380,7 @@ partitions:
 
 ### Сломаем/починим рейд
 
-#### Pоль mdraid_replace_disk
+#### Плей mdraid_replace_disk
 
 Создаем файл ```mdraid_replace_disk/tasks/main.yaml```
 
@@ -388,13 +388,19 @@ partitions:
 - name: Set disk as faulty
   shell: "mdadm -f {{ array_name }} {{ fail_disk }}"
   tags: service
-- name: Remove faulty disk\
+- name: Remove faulty disk
   shell: "mdadm -r {{ array_name }} {{ fail_disk }}"
   tags: service
 - name: Add new disk
   shell: "mdadm -a {{ array_name }} {{ good_disk }}"
   tags: service
 ```
+
+Задачи в плей:
+
+- Set disk as faulty - помечаем диск сбойным
+- Remove faulty disk - удаляем сбойный диск
+- Add new disk - добавляем новый диск
 
 ## Переходим к исполнению плейбука
 
