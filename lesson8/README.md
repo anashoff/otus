@@ -559,7 +559,8 @@ https://otus.ru/lessons/linux-hl/
 
 ```
 
-По ссылке открываетсчя курс "Инфраструктура высоконагруженных систем"
+По ссылке открывается курс "Инфраструктура высоконагруженных систем"
+
 Задание выполнено
 
 На github выложен [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson8/Vagrantfile), использованный в задании
