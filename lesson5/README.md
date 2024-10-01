@@ -342,7 +342,7 @@ partitions:
 
 Поэтому задачи были выполнены через shell
 
-Файл ```fs_create/tasks/main.yaml
+Файл ```fs_create/tasks/main.yaml```
 
 ```yaml
 - name: GPT Create
@@ -395,6 +395,7 @@ partitions:
   shell: "mdadm -a {{ array_name }} {{ good_disk }}"
   tags: service
 ```
+
 и файл ```mdraid_replace_disk/vars/main.yaml```
 
 ```yaml
@@ -540,9 +541,10 @@ tmpfs            tmpfs      100M            0  100M            0% /run/user/1000
 tmpfs            tmpfs      100M            0  100M            0% /run/user/0
 
 ```
+
 Видим созданный рейд-массив, разделы, файловые системы
 
-#### Теперь выполним замену диска sdd на sdg
+### Теперь выполним замену диска sdd на sdg
 
 ```$ ansible-playbook site.yaml -t service```
 
