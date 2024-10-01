@@ -221,7 +221,7 @@ snickers1  compressratio         1.00x                      -
 
 Победил **gzip-9**
 
-### Определить настройки пула.
+### Определить настройки пула
 
 Скачиваем архив и распаковываем его
 
@@ -562,4 +562,4 @@ https://otus.ru/lessons/linux-hl/
 По ссылке открываетсчя курс "Инфраструктура высоконагруженных систем"
 Задание выполнено
 
-На github выложен [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson8/Vagrantfile), использованный в задании.
+На github выложен [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson8/Vagrantfile), использованный в задании
