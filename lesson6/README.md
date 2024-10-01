@@ -129,9 +129,7 @@ xfsrestore: Restore Status: SUCCESS
 ```text
 [root@lvm ~]# for i in /proc/ /sys/ /dev/ /run/ /boot/; \
  do mount --bind $i /mnt/$i; done
-
 [root@lvm ~]# chroot /mnt/
-
 [root@lvm /]# grub2-mkconfig -o /boot/grub2/grub.cfg
 Generating grub configuration file ...
 Found linux image: /boot/vmlinuz-3.10.0-862.2.3.el7.x86_64
@@ -150,6 +148,7 @@ done
 Выходим из chroot и перезагружаемся.
 
 Заходим под root
+
 Смотрим структуру дисков
 
 ```text
@@ -424,7 +423,9 @@ adm  cache  db  empty  games  gopher  kerberos  lib  local  lock  log  lost+foun
 
 Удаляем /var1
 
+```text
 [root@lvm ~]# rm -rf /var1
+```
 
 ```text
 [root@lvm /]# lsblk
@@ -494,8 +495,7 @@ foo1.txt  foo10.txt  foo2.txt  foo21.txt  foo22.txt  foo23.txt  foo24.txt  foo25
 foo1.txt   foo11.txt  foo13.txt  foo15.txt  foo17.txt  foo19.txt  foo20.txt  foo22.txt  foo24.txt  foo3.txt  foo5.txt  foo7.txt  foo9.txt
 foo10.txt  foo12.txt  foo14.txt  foo16.txt  foo18.txt  foo2.txt   foo21.txt  foo23.txt  foo25.txt  foo4.txt  foo6.txt  foo8.txt  vagrant
 ```
+
 Задание выполнено
 
-
-
-
+На github выложен [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson6/Vagrantfile), используемый в работе
