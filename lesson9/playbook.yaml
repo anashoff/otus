@@ -1,0 +1,41 @@
+- hosts: nfss
+  gather_facts: true
+  become: yes
+  tasks:
+    - name: install nfs server
+      package:
+        name: nfs-common, nfs-kernel-server
+        state: present
+    - name: Create a mountable directory 
+      file:
+        path: /srv/share/upload
+        state: directory
+        owner: nobody
+        group: nogroup
+        mode: '0777'
+    - name: Copy exports file.
+      template:
+         src: exports.j2
+         dest: /etc/exports
+         owner: root
+         group: root
+         mode: 0644
+    - name: reload_exportfs
+      shell: "systemctl reloadl nfs;exportfs -r"
+- hosts: nfsc
+  gather_facts: true
+  become: yes
+  tasks:
+    - name: install nfs client
+      package:
+        name: nfs-common
+        state: present
+    - name: Modify_fstab
+      lineinfile:
+        line: '192.168.50.10:/srv/share/ /mnt nfs vers=3,noauto,x-systemd.automount 0 0'
+        path: /etc/fstab
+    - name: 
+      systemd_service:
+        state: restarted
+        daemon_reload: true
+        name: remote-fs.target

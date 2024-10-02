@@ -1,0 +1,41 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/jammy64"
+
+#  config.vm.provision "ansible" do |ansible|
+#    ansible.verbose = "vvv"
+#    ansible.playbook = "playbook.yml"
+#    ansible.become = "true"
+#  end
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 1024
+    v.cpus = 1
+  end
+
+  ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_ed25519.pub").first.strip
+
+  config.vm.define "nfss" do |nfss|
+    nfss.vm.network "private_network", ip: "192.168.50.10", virtualbox__intnet: "net1"
+    nfss.vm.hostname = "nfss"
+    nfss.vm.provision 'shell', inline: 'mkdir -p /root/.ssh'
+    nfss.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /root/.ssh/authorized_keys"
+    nfss.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys", privileged: false
+
+    #nfss.vm.provision "shell", path: "nfss_script.sh"
+  end
+
+  config.vm.define "nfsc" do |nfsc|
+    nfsc.vm.network "private_network", ip: "192.168.50.11", virtualbox__intnet: "net1"
+    nfsc.vm.hostname = "nfsc"
+    nfsc.vm.provision 'shell', inline: 'mkdir -p /root/.ssh'
+    nfsc.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /root/.ssh/authorized_keys"
+    nfsc.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys", privileged: false
+
+    #nfsc.vm.provision "shell", path: "nfsc_script.sh"
+  end
+
+end
