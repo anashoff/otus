@@ -14,7 +14,7 @@ Systemd — создание unit-файла
 
 #### Установка и настройка среды выполнения
 
-Подготовим Vagrantfile
+Подготовим [Vagrant](https://github.com/anashoff/otus/blob/master/lesson12/Vagrantfile)
 
 ```ruby
 # -*- mode: ruby -*-
@@ -79,7 +79,7 @@ end
 
 Файлы
 
-```ansible.cfg```
+[ansible.cfg](https://github.com/anashoff/otus/blob/master/lesson12/ansible.cfg)
 
 ```ini
 [defaults]
@@ -89,14 +89,14 @@ host_key_checking = False
 retry_files_enabled = False
 ```
 
-```hosts.ini```  
+[hosts.ini](https://github.com/anashoff/otus/blob/master/lesson12/hosts.ini)
 
 ```ini
 [all]
 serv ansible_port=2222 ansible_host=127.0.0.1 ansible_username=vagrant
 ```
 
-```site.yaml```
+[site.yaml](https://github.com/anashoff/otus/blob/master/lesson12/site.yaml)
 
 ```yaml
 ---
@@ -111,7 +111,7 @@ serv ansible_port=2222 ansible_host=127.0.0.1 ansible_username=vagrant
 ...
 ```
 
-```create_service/tasks/main.yml```
+[create_service/tasks/main.yml](https://github.com/anashoff/otus/blob/master/lesson12/roles/create_service/tasks/main.yml)
 
 ```yaml
 ---
@@ -145,7 +145,7 @@ serv ansible_port=2222 ansible_host=127.0.0.1 ansible_username=vagrant
       state: started
 ```
 
-```create_service/template/conf.j2```
+[create_service/template/conf.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/create_service/templates/conf.j2)
 
 ```ini
 ---
@@ -158,7 +158,7 @@ LOG=/var/log/watchlog.log
 
 ```
 
-```create_service/template/log.j2```
+[create_service/template/log.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/create_service/templates/log.j2)
 
 ```jinja
 Font directories:
@@ -231,7 +231,7 @@ ALERT
 /usr/share/fonts/truetype/noto: skipping, existing cache is valid: 2380 fonts, 0 dirs
 ```
 
-```create_service/template/script.j2```
+[create_service/template/script.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/create_service/templates/script.j2)
 
 ```ini
 #!/bin/bash
@@ -249,7 +249,7 @@ fi
 
 ```
 
-```create_service/template/service.j2```
+[create_service/template/service.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/create_service/templates/service.j2)
 
 ```ini
 [Unit]
@@ -261,7 +261,7 @@ EnvironmentFile=/etc/default/watchlog
 ExecStart=/opt/watchlog.sh $WORD $LOG
 ```
 
-```create_service/template/timer.j2```
+[create_service/template/timer.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/create_service/templates/timer.j2)
 
 ```ini
 [Unit]
@@ -276,7 +276,7 @@ Unit=watchlog.service
 WantedBy=multi-user.target
 ```
 
-```create_unit/tasks/main.yml```
+[create_unit/tasks/main.yml](https://github.com/anashoff/otus/blob/master/lesson12/roles/create_unit/tasks/main.yml)
 
 ```yaml
 ---
@@ -303,7 +303,7 @@ WantedBy=multi-user.target
        state: started
 ```
 
-```create_unit/template/fcgi.j2```
+[create_unit/template/fcgi.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/create_unit/templates/fcgi.j2)
 
 ```ini
 # You must set some working options before the "spawn-fcgi" service will work.
@@ -316,7 +316,7 @@ SOCKET=/var/run/php-fcgi.sock
 OPTIONS="-u www-data -g www-data -s $SOCKET -S -M 0600 -C 32 -F 1 -- /usr/bin/php-cgi"
 ```
 
-```create_unit/template/service.j2```
+[create_unit/template/service.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/create_unit/templates/service.j2)
 
 ```ini
 [Unit]
@@ -334,7 +334,7 @@ KillMode=process
 WantedBy=multi-user.target
 ```
 
-```modify_nginx/tasks/main.yml```
+[modify_nginx/tasks/main.yml](https://github.com/anashoff/otus/blob/master/lesson12/roles/modify_nginx/tasks/main.yml)
 
 ```yaml
 ---
@@ -365,7 +365,7 @@ WantedBy=multi-user.target
       state: started
 ```
 
-```modify_nginx/template/conf1.j2```
+[modify_nginx/template/conf1.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/modify_nginx/templates/conf1.j2)
 
 ```ini
 user www-data;
@@ -406,7 +406,7 @@ server {
 }
 ```
 
-```modify_nginx/template/conf2.j2```
+[modify_nginx/template/conf2.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/modify_nginx/templates/conf2.j2)
 
 ```ini
 user www-data;
@@ -447,7 +447,7 @@ http {
 }
 ```
 
-```modify_nginx/template/service.j2```
+[modify_nginx/template/service.j2](https://github.com/anashoff/otus/blob/master/lesson12/roles/modify_nginx/templates/service.j2)
 
 ```ini
 # Stop dance for nginx
@@ -481,7 +481,7 @@ KillMode=mixed
 WantedBy=multi-user.target
 ```
 
-Запускаем роли
+Запускаем роли Ansible
 
 ```text
 anasha@otus:~/less12$ ansible-playbook site.yaml
