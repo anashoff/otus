@@ -1,5 +1,8 @@
 ---
 # tasks file for create_unit
+  - name: update apt
+    apt:
+      update_cache: true
   - name: install fspawn-fcgi and tools
     package:
       name: spawn-fcgi,php,php-cgi,php-cli,apache2,libapache2-mod-fcgid
