@@ -1,0 +1,58 @@
+---
+- hosts: rpmtest
+  gather_facts: true
+  become: yes
+  tasks:
+    - name: create repo
+      file:
+        path: /usr/share/nginx/html/repo
+        state: directory
+        mode: '0755'
+    - name: copy rpms
+      copy:
+        src: /root/rpmbuild/RPMS/x86_64/
+        dest: /usr/share/nginx/html/repo
+        remote_src: true
+    - name: create repo
+      command: createrepo /usr/share/nginx/html/repo/
+    - name: modify nginx.conf
+      lineinfile:
+        path: /etc/nginx/nginx.conf
+        line: 'autoindex on;'
+        insertafter: server_name
+        firstmatch: true
+        state: present
+    - name: modify nginx.conf
+      lineinfile:
+        path: /etc/nginx/nginx.conf
+        line: 'index index.html index.htm;'
+        insertbefore: autoindex
+        firstmatch: true
+        state: present
+    - name: restart nginx
+      systemd:
+        name: nginx
+        state: restarted
+    - name: create config
+      ansible.builtin.template:
+        src: templates/repo.j2
+        dest: /etc/yum.repos.d/otus.repo
+    - name: add rpm
+      command: "chdir=/usr/share/nginx/html/repo/ wget https://repo.percona.com/yum/percona-release-latest.noarch.rpm"
+    - name: update repo
+      command: createrepo /usr/share/nginx/html/repo/
+      tags: last
+    - name: update yum cache
+      command: yum makecache
+      tags: last
+    - name: installing the rpm files
+      yum:
+        name: percona-release.noarch
+        disable_gpg_check: true
+        state: present
+      tags: last
+
+
+
+
+ 

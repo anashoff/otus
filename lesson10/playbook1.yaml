@@ -1,0 +1,69 @@
+---
+- hosts: rpmtest
+  gather_facts: true
+  become: yes
+  tasks:
+    - name: install tools
+      package:
+        name: wget, rpmdevtools, rpm-build, createrepo, yum-utils, cmake, gcc, git, nano
+        state: present
+    - name: select derectory
+      command: "chdir=/root ls"
+    - name: make folder
+      file:
+        path: /root/rpm"
+        state: directory
+    - name: get nginx srpm
+      command: "yumdownloader --source nginx"
+    - name: rpm nginx
+      command: "rpm -Uvh nginx*.src.rpm"
+    - name: yum-builddep
+      command: "yum-builddep -y nginx"
+    - name: 
+      git: 
+        repo: https://github.com/google/ngx_brotli
+        clone: true
+        recursive: true
+        dest: /root/ngx_brotli
+        force: true
+    - name: mkdir out
+      file:
+        path: "/root/ngx_brotli/deps/brotli/out/"
+        state: directory
+    - name: cmake ngx_brotli
+      command: "chdir=/root/ngx_brotli/deps/brotli/out cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS=\"-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections\" -DCMAKE_CXX_FLAGS=\"-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections\" -DCMAKE_INSTALL_PREFIX=./installed .."
+    - name: cmake brotlienc
+      command: "chdir=/root/ngx_brotli/deps/brotli/out cmake --build . --config Release -j 2 --target brotlienc"
+    - name: modify SPEC
+      lineinfile:
+        path: /root/rpmbuild/SPECS/nginx.spec
+        line: '    --add-module=/root/ngx_brotli \'
+        insertafter: ./configure
+        state: present
+    - name: build RPM
+      command: chdir=/root/rpmbuild/SPECS/ rpmbuild -ba nginx.spec -D 'debug_package %{nil}'
+    - name: copy
+      copy: 
+        src: /root/rpmbuild/RPMS/noarch/
+        dest: /root/rpmbuild/RPMS/x86_64
+        remote_src: true
+    - name: Find all rpm files in folder
+      find:
+        paths: "/root/rpmbuild/RPMS/x86_64"
+        patterns: "*.rpm"
+      register: rpm_files
+    - name: Setting rpm_list
+      set_fact:
+         rpm_list: "{{ rpm_files.files | map(attribute='path') | list}}"
+    - name: installing the rpm files
+      yum:
+        name: "{{rpm_list}}"
+        disable_gpg_check: true
+        state: present
+    - name: start nginx
+      systemd: 
+        name: nginx
+        state: started
+      tags: last  
+
+
