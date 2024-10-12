@@ -1,0 +1,22 @@
+---
+# tasks file for create_unit
+  - name: install fspawn-fcgi and tools
+    package:
+      name: spawn-fcgi,php,php-cgi,php-cli,apache2,libapache2-mod-fcgid
+      state: present
+  - name: create dir
+    file:
+      name: /etc/spawn-fcgi/
+      state: directory
+  - name: create config
+    ansible.builtin.template:
+       src: templates/fcgi.j2
+       dest: /etc/spawn-fcgi/fcgi.conf
+  - name: create log file
+    ansible.builtin.template:
+       src: templates/service.j2
+       dest: /etc/systemd/system/spawn-fcgi.service
+  - name: start service
+    systemd:
+       name: spawn-fcgi
+       state: started

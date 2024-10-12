@@ -1,0 +1,21 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/jammy64"
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 1024
+    v.cpus = 1
+  end
+
+  ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_ed25519.pub").first.strip
+
+  config.vm.define "serv" do |serv|
+    serv.vm.network "private_network", ip: "192.168.50.10", virtualbox__intnet: "net1"
+    serv.vm.hostname = "serv"
+    serv.vm.provision 'shell', inline: 'mkdir -p /root/.ssh'
+    serv.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /root/.ssh/authorized_keys"
+    serv.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys", privileged: false
+
+  end
+end

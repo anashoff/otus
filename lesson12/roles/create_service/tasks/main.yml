@@ -1,0 +1,29 @@
+---
+  - name: write config using jinja2
+    ansible.builtin.template:
+       src: templates/conf.j2
+       dest: /etc/default/watchlog
+  - name: create log file
+    ansible.builtin.template:
+       src: templates/log.j2
+       dest: /var/log/watchlog.log 
+  - name: write script using jinja2
+    ansible.builtin.template:
+       src: templates/script.j2
+       dest: /opt/watchlog.sh
+       mode: 0777
+  - name: write service jinja2
+    ansible.builtin.template:
+       src: templates/service.j2
+       dest: /etc/systemd/system/watchlog.service
+  - name: write timer using jinja2
+    ansible.builtin.template:
+       src: templates/timer.j2
+       dest: /etc/systemd/system/watchlog.timer
+  - name: reload
+    systemd: 
+      daemon_reload: yes
+  - name: start service
+    systemd: 
+      name: watchlog.timer
+      state: started
