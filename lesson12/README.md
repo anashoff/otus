@@ -489,9 +489,6 @@ WantedBy=multi-user.target
 ```text
 anasha@otus:~/less12$ ansible-playbook site.yaml
 
-┬─[anasha@otus:~/less12]─[10:37:30]─[G:(8e2c3df9)]
-╰─>$ ansible-playbook site.yaml
-
 PLAY [Systemd lesson] *********************************************************************************************************************
 
 TASK [Gathering Facts] ********************************************************************************************************************
