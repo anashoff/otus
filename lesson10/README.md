@@ -158,7 +158,6 @@ enabled=1
 
 ```yaml
 ---
----
 - hosts: rpmtest
   gather_facts: true
   become: yes
