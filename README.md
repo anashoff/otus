@@ -9,4 +9,5 @@
 - [lesson6](https://github.com/anashoff/otus/tree/master/lesson6) - Задание 6. Работа с LVM
 - [lesson8](https://github.com/anashoff/otus/tree/master/lesson8) - Задание 8. Практические навыки работы с ZFS
 - [lesson9](https://github.com/anashoff/otus/tree/master/lesson9) - Задание 9. Vagrant стенд для NFS
+- [lesson10](https://github.com/anashoff/otus/tree/master/lesson10) - Задание 10. Размещаем свой RPM в своем репозитории
 - [lesson12](https://github.com/anashoff/otus/tree/master/lesson12) - Задание 12. Systemd — создание unit-файла
