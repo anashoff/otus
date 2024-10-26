@@ -219,7 +219,7 @@ fi
 Перезапускаем cron
 
 ```bash
-systemctl restart cron
+systemctl restart cron 
 ```
 
 Ждем результата выполнения скрипта на почте (пример скриншот из Thunderbird).
