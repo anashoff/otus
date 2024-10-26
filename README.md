@@ -12,3 +12,4 @@
 - [lesson10](https://github.com/anashoff/otus/tree/master/lesson10) - Задание 10. Размещаем свой RPM в своем репозитории
 - [lesson11](https://github.com/anashoff/otus/tree/master/lesson11) - Задание 11. Работа с загрузчиком
 - [lesson12](https://github.com/anashoff/otus/tree/master/lesson12) - Задание 12. Systemd — создание unit-файла
+- [lesson13](https://github.com/anashoff/otus/tree/master/lesson13) - Задание 13. Написать скрипт на языке Bash
