@@ -13,3 +13,5 @@
 - [lesson11](https://github.com/anashoff/otus/tree/master/lesson11) - Задание 11. Работа с загрузчиком
 - [lesson12](https://github.com/anashoff/otus/tree/master/lesson12) - Задание 12. Systemd — создание unit-файла
 - [lesson13](https://github.com/anashoff/otus/tree/master/lesson13) - Задание 13. Написать скрипт на языке Bash
+- [lesson15] - Задание 15. Работа с процессами
+- [lesson18](https://github.com/anashoff/otus/tree/master/lesson18) - Задание 18. Практика с SELinux
