@@ -204,7 +204,7 @@ Nginx не работает
 
 ![pict16](pict/16.png)
 
-фиксим эту багу, добавив в playbook.yaml первой задачей в блоке **tasks**
+фиксим эту багу, добавив в [playbook.yaml](https://github.com/anashoff/otus/blob/master/lesson18/provisioning/playbook.yml) первой задачей в блоке **tasks**
 
 ```yaml
   - name: correct yum packages pathes for old CentOS 7
