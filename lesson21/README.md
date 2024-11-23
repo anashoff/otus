@@ -97,7 +97,7 @@ scrape_configs:
 
 далее ```Save & test```
 
-Successfully queried the Prometheus API.
+```Successfully queried the Prometheus API.```
 
 #### Создаем дашборд
 
