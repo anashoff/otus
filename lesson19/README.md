@@ -17,7 +17,6 @@ Docker
 
 Установим Docker по официальной документации с использованием apt репозитория на хост Debian 12
 
-
 ```root@otus:~#  apt update```
 
 ```root@otus:~#  apt install ca-certificates curl```
@@ -31,7 +30,6 @@ Docker
 ```root@otus:~# echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null```
 
 ```root@otus:~#  apt-get update```
-
 
 ```root@otus:~# apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin```
 
@@ -171,7 +169,8 @@ RUN set -x \
     && apk add --no-cache curl ca-certificates
 COPY ./index.html /usr/share/nginx/html/index.html
 ```
-также в текущую папку положим новую дефолтную страницу [index.html]()
+
+также в текущую папку положим новую дефолтную страницу [index.html](https://github.com/anashoff/otus/blob/master/lesson19/index.html)
 
 ```html
 <head>
@@ -193,6 +192,7 @@ COPY ./index.html /usr/share/nginx/html/index.html
 </body>
 
 ```
+
 Запускаем build
 
 ```root@otus:~# docker build -t trollnginx .```
@@ -218,15 +218,6 @@ nginx работает
 Образ - это шаблон, который хранит в себе всё необходимое для запуска приложения которе бутет помещено в контейнер. Образ можно представить как стэк слоёв, каждый из которых доступен только для чтения. Каждый последующий слой дополняет функциональность предыдущего до нужного нам уровня. Например на первом слое может находиться операционная система, на втором - какое-либо приложение, на третьем - дополнения для этого приложения и т.д. Таким образом настроив образ как нам нужно можно использовать его для генерации контейнеров необходимой функциональности.
 
 Контейнер - это виртуализированная  изолированная среда выполнения с запущенным в ней экземпляром образа. В концепции слоёв контейнер является верхним слоем и, в отличие от слоёв образа, доступен и для чтения, и для записи. После удаления контейнера, этот слой удаляется. На основе одного образа можно одновременно запустить несколько экземпляров контейнера.
-
-
-
-
-
-
-
-
-
 
 ### Ответьте на вопрос: Можно ли в контейнере собрать ядро?
 
