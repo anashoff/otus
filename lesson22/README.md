@@ -228,8 +228,9 @@ PLAY RECAP *********************************************************************
 pam                        : ok=8    changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
 
-Проверяем работу 
-Сегдня воскресение, так что пользователь otusadm должен зайти в сеанс, а пользователь otus - нет.
+Проверяем работу. 
+
+Сегодня воскресение, так что пользователь otusadm должен зайти в сеанс, а пользователь otus - нет.
 
 ```
 ┬─[anasha@otus:~/less22]─[12:18:06]
@@ -238,7 +239,7 @@ otus@192.168.57.10's password:
 Permission denied, please try again.
 ```
 
-Пользователь не может войти
+Пользователь otus не может войти
 
 ```
 ┬─[anasha@otus:~/less22]─[12:20:38]
@@ -285,7 +286,7 @@ See "man sudo_root" for details.
 
 otusadm@pam:~$ 
 ```
-Пользовател зашел. Посмотрим лог авторизации ssh
+Пользовател otusadm зашел. Посмотрим лог авторизации ssh
 
 ```zsh
 otusadm@pam:~$ sudo cat /var/log/auth.log
