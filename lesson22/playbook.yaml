@@ -1,0 +1,43 @@
+---
+- hosts: pam
+  gather_facts: true
+  become: yes
+  tasks:
+  - name: Create group admin
+    group: 
+      name: admin
+      state: present
+  - name: Create user otusadm and add it to group admin
+    user: 
+      name: otusadm
+      create_home: yes
+      shell: /bin/bash
+      groups: admin
+      append: yes
+      password: "$6$rounds=656000$mysecretsalt$04wVf1FbaGRszgZJRYTZw/STBfYl3vioDMj9iN8W6vFPH7V1vNqb3BQkZoS.diohjkix6EKU5AR5wYXt5oVnz1"
+  - name: Create user otus
+    user: 
+      name: otus
+      create_home: yes
+      shell: /bin/bash
+      password: "$6$rounds=656000$mysecretsalt$04wVf1FbaGRszgZJRYTZw/STBfYl3vioDMj9iN8W6vFPH7V1vNqb3BQkZoS.diohjkix6EKU5AR5wYXt5oVnz1"
+  - name: Add user root to group admin
+    user:
+      name: root
+      groups: admin
+      append: yes
+  - name: Add user vagrant to group admin
+    user:
+      name: vagrant
+      groups: admin
+      append: yes 
+  - name: write script
+    ansible.builtin.template:
+       src: script.j2
+       dest: /usr/local/bin/login.sh
+       mode: 755
+  - name: Modify config file
+    lineinfile:
+      line: 'auth required pam_exec.so debug /usr/local/bin/login.sh'
+      path: /etc/pam.d/sshd
+

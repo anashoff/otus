@@ -17,3 +17,4 @@
 - [lesson18](https://github.com/anashoff/otus/tree/master/lesson18) - Задание 18. Практика с SELinux
 - [lesson19](https://github.com/anashoff/otus/tree/master/lesson19) - Задание 19. Docker
 - [lesson21](https://github.com/anashoff/otus/tree/master/lesson21) - Задание 21. Настройка мониторинга
+- [lesson22](https://github.com/anashoff/otus/tree/master/lesson22) - Задание 22.
