@@ -9,13 +9,16 @@ Vagrant-стенд c OSPF
  Создать домашнюю сетевую лабораторию. Научится настраивать протокол OSPF в Linux-based системах
 
 1. Развернуть 3 виртуальные машины
-2. Объединить их разными vlan
+
+2. Объединить их разными vlan:
+
 - настроить OSPF между машинами на базе Quagga;
 - изобразить ассиметричный роутинг;
 - сделать один из линков "дорогим", но что бы при этом роутинг был симметричным.
+
 ### Подготовка среды выполнения
 
-Для выполнения задания развернем 3 виртуальные машины, соединенные между собой разными VLAN. 
+Для выполнения задания развернем 3 виртуальные машины, соединенные между собой разными VLAN.
 
 Схема сети
 
@@ -126,7 +129,7 @@ router2 ansible_host=192.168.50.11 ansible_user=vagrant router_id=2.2.2.2
 router3 ansible_host=192.168.50.12 ansible_user=vagrant router_id=3.3.3.3
 ```
 
-Файл шаблона конфигурации FRR [template/frr.conf..j2](https://github.com/anashoff/otus/blob/master/lesson33/frr.conf.j2)
+Файл шаблона конфигурации FRR template/frr.conf.j2
 
 ```jinja
 !Указание версии FRR
@@ -147,13 +150,7 @@ interface enp0s8
  !Указываем параметр игнорирования MTU
  ip ospf mtu-ignore
  !Если потребуется, можно указать «стоимость» интерфейса
-{% if ansible_hostname == 'router1' %}
  !ip ospf cost 1000
-{% elif ansible_hostname == 'router2' and symmetric_routing == true %}
- !ip ospf cost 1000
-{% else %}
- !ip ospf cost 450
-{% endif %}
  !Указываем параметры hello-интервала для OSPF пакетов
  ip ospf hello-interval 10
  !Указываем параметры dead-интервала для OSPF пакетов
@@ -321,233 +318,378 @@ pathd_options="  -A 127.0.0.1"
 #all_wrap=""
 ```
 
-
-
-
-Файл [provision.yml](https://github.com/anashoff/otus/blob/master/lesson33/provision.yml)
+Файл плейбука provision.yml
 
 ```yaml
 ---
-- hosts: pam
-  gather_facts: true
+#Начало файла provision.yml
+- name: OSPF
+  #Указываем имя хоста или группу, которые будем настраивать
+  hosts: all
+  #Параметр выполнения модулей от root-пользователя
   become: yes
+  #Указание файла с дополнителыми переменными (понадобится при добавлении темплейтов)
+  vars_files:
+    - defaults/main.yml
   tasks:
-  - name: Create group admin
-    group: 
-      name: admin
+  # Обновление пакетов и установка vim, traceroute, tcpdump, net-tools
+  - name: install base tools
+    apt:
+      name:
+        - vim
+        - traceroute
+        - tcpdump
+        - net-tools
       state: present
-  - name: Create user otusadm and add it to group admin
-    user: 
-      name: otusadm
-      create_home: yes
-      shell: /bin/bash
-      groups: admin
-      append: yes
-      password: "$6$rounds=656000$mysecretsalt$04wVf1FbaGRszgZJRYTZw/STBfYl3vioDMj9iN8W6vFPH7V1vNqb3BQkZoS.diohjkix6EKU5AR5wYXt5oVnz1"
-  - name: Create user otus
-    user: 
-      name: otus
-      create_home: yes
-      shell: /bin/bash
-      password: "$6$rounds=656000$mysecretsalt$04wVf1FbaGRszgZJRYTZw/STBfYl3vioDMj9iN8W6vFPH7V1vNqb3BQkZoS.diohjkix6EKU5AR5wYXt5oVnz1"
-  - name: Add user root to group admin
-    user:
-      name: root
-      groups: admin
-      append: yes
-  - name: Add user vagrant to group admin
-    user:
-      name: vagrant
-      groups: admin
-      append: yes 
-  - name: write script
-    ansible.builtin.template:
-       src: script.j2
-       dest: /usr/local/bin/login.sh
-       mode: 755
-  - name: Modify config file
-    lineinfile:
-      line: 'auth required pam_exec.so debug /usr/local/bin/login.sh'
-      path: /etc/pam.d/sshd
+      update_cache: true
+  #Отключаем UFW и удаляем его из автозагрузки
+  - name: disable ufw service
+    service:
+      name: ufw
+      state: stopped
+      enabled: false
+  # Добавляем gpg-key репозитория
+  - name: add gpg frrouting.org
+    apt_key:
+      url: "https://deb.frrouting.org/frr/keys.asc"
+      state: present
+  # Добавляем репозиторий https://deb.frrouting.org/frr
+  - name: add frr repo
+    apt_repository:
+      repo: 'deb https://deb.frrouting.org/frr {{ ansible_distribution_release }} frr-stable'
+      state: present
+  # Обновляем пакеты и устанавливаем FRR
+  - name: install FRR packages
+    apt:
+      name: 
+        - frr
+        - frr-pythontools
+      state: present
+      update_cache: true
+  # Включаем маршрутизацию транзитных пакетов
+  - name: set up forward packages across routers
+    sysctl:
+      name: net.ipv4.conf.all.forwarding
+      value: '1'
+      state: present
+  # Копируем файл daemons на хосты, указываем владельца и права
+  - name: base set up OSPF 
+    template:
+      src: template/daemons
+      dest: /etc/frr/daemons
+      owner: frr
+      group: frr
+      mode: 0640
+  # Копируем файл frr.conf на хосты, указываем владельца и права
+  - name: set up OSPF 
+    template:
+      src: template/frr.conf.j2
+      dest: /etc/frr/frr.conf
+      owner: frr
+      group: frr
+      mode: 0640
+    tags:
+      - setup_ospf
+  # Перезапускам FRR и добавляем в автозагрузку
+  - name: restart FRR
+    service:
+      name: frr
+      state: restarted
+      enabled: true
+    tags:
+      - setup_ospf
 ```
 
-Плейбук выполняет следующие команды
+## Выполнение работы
 
-- Создает группу admin
-- Создает пользователей otus и otusadm. Пользователь otusadm входит в группу admin. Пароль для пользователей ***Otus2022!***. Для использования в плейбуке создадим парольною строку при помощи команды
+### Настроить OSPF между машинами
 
-```ansible all -i localhost, -m debug -a "msg={{ 'Otus2022!' | password_hash('sha512', 'mysecretsalt') }}"```
-
-- Создает скрипт /usr/local/bin/login.sh, назначает права на выполнение
-- Добавляет в конфигурационный файл /ets/pam.d/sshd строку вызова скрипта при аутентификации в ssh
-
-#### Выполнение работы
-
-Запускаем виртуальную машину
+Запускаем Vagrantfile
 
 ```zsh
-┬─[anasha@otus:~/less22]─[12:05:49]
+┬─[anasha@otus:~/less33]─[12:05:49]
 ╰─o$ vagrant up
-Bringing machine 'pam' up with 'virtualbox' provider...
-==> pam: Importing base box 'ubuntu/jammy64'...
-==> pam: Matching MAC address for NAT networking...
-==> pam: Setting the name of the VM: less22_pam_1733044629580_30889
-==> pam: Clearing any previously set network interfaces...
-==> pam: Preparing network interfaces based on configuration...
-    pam: Adapter 1: nat
-    pam: Adapter 2: hostonly
-==> pam: Forwarding ports...
-    pam: 22 (guest) => 2222 (host) (adapter 1)
-==> pam: Running 'pre-boot' VM customizations...
-==> pam: Booting VM...
-==> pam: Waiting for machine to boot. This may take a few minutes...
-    pam: SSH address: 127.0.0.1:2222
-    pam: SSH username: vagrant
-    pam: SSH auth method: private key
-    pam: 
-    pam: Vagrant insecure key detected. Vagrant will automatically replace
-    pam: this with a newly generated keypair for better security.
-    pam: 
-    pam: Inserting generated public key within guest...
-    pam: Removing insecure key from the guest if it's present...
-    pam: Key inserted! Disconnecting and reconnecting using new SSH key...
-==> pam: Machine booted and ready!
-==> pam: Checking for guest additions in VM...
-    pam: The guest additions on this VM do not match the installed version of
-    pam: VirtualBox! In most cases this is fine, but in rare cases it can
-    pam: prevent things such as shared folders from working properly. If you see
-    pam: shared folder errors, please make sure the guest additions within the
-    pam: virtual machine match the version of VirtualBox you have installed on
-    pam: your host and reload your VM.
-    pam: 
-    pam: Guest Additions Version: 6.0.0 r127566
-    pam: VirtualBox Version: 7.0
-==> pam: Setting hostname...
-==> pam: Configuring and enabling network interfaces...
-==> pam: Running provisioner: shell...
-    pam: Running: inline script
+Bringing machine 'router1' up with 'virtualbox' provider...
+Bringing machine 'router2' up with 'virtualbox' provider...
+Bringing machine 'router3' up with 'virtualbox' provider...
+....................................
 ```
 
 Затем плейбук
 
-```zsh
-┬─[anasha@otus:~/less22]─[12:17:41]
-╰─o$ ansible-playbook playbook.yaml
+```ini
+─[anasha@otus:~/less33]─[16:08:03]
+╰─o$ ansible-playbook -i ansible/hosts -l all ansible/provision.yml -e "host_key_checking=false"
 
-PLAY [pam] **************************************************************************************************************
+PLAY [OSPF] **************************************************************************************************************
 
 TASK [Gathering Facts] **************************************************************************************************************
-ok: [pam]
 
-TASK [Create group admin] **************************************************************************************************************
-ok: [pam]
+ok: [router1] 
+ok: [router3]
+ok: [router2]
 
-TASK [Create user otusadm and add it to group admin] **************************************************************************************************************
-changed: [pam]
+TASK [install base tools] **************************************************************************************************************
+changed: [router1]
+changed: [router3]
+changed: [router2]
 
-TASK [Create user otus] **************************************************************************************************************
-changed: [pam]
+TASK [disable ufw service] **************************************************************************************************************
+changed: [router2]
+changed: [router3]
+changed: [router1]
 
-TASK [Add user root to group admin] **************************************************************************************************************
-changed: [pam]
+TASK [add gpg frrouting.org] **************************************************************************************************************
+changed: [router3]
+changed: [router1]
+changed: [router2]
 
-TASK [Add user vagrant to group admin] **************************************************************************************************************
-changed: [pam]
+TASK [add frr repo] *************************************************************************************************************
+changed: [router3]
+changed: [router2]
+changed: [router1]
 
-TASK [write script] **************************************************************************************************************
-changed: [pam]
+TASK [install FRR packages] **************************************************************************************************************
+changed: [router2]
+changed: [router3]
+changed: [router1]
 
-TASK [Modify config file] **************************************************************************************************************
-changed: [pam]
+TASK [set up forward packages across routers] *********************************************************************************************
+changed: [router2]
+changed: [router1]
+changed: [router3]
+
+TASK [base set up OSPF] **************************************************************************************************************
+changed: [router3]
+changed: [router2]
+changed: [router1]
+
+TASK [set up OSPF] **************************************************************************************************************
+changed: [router1]
+changed: [router2]
+changed: [router3]
+
+TASK [restart FRR] **************************************************************************************************************
+changed: [router2]
+changed: [router3]
+changed: [router1]
 
 PLAY RECAP **************************************************************************************************************
-pam                        : ok=8    changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+router1                    : ok=10   changed=9    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+router2                    : ok=10   changed=9    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+router3                    : ok=10   changed=9    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
 
-Проверяем работу.
+Проверим работу сетевой лаборатории
 
-Сегодня воскресение, так что пользователь otusadm должен зайти в сеанс, а пользователь otus - нет.
+Подключаемся к  router_1 и проверяем сервис FRR
+
+![pict2](pict/r1_0.png)
+
+Сервис запущен
+
+Проверяем прохождение пинга по сетям
+
+![pict2](pict/r1_1.png)
+
+Видим, что все сети доступны
+
+Посмотрим маршруты до 192.168.30.0 сети с включенным и выключенным интерфейсом enp0s9
+
+![pict2](pict/r1_2.png)
+
+Видим, что при отключении интерфейса марштрут изменяется
+
+Посмотрим таблицу маршрутов роутера
+
+![pict2](pict/r1_3.png)
+
+Убеждаемся, что все маршгруты построены верно
+
+Аналогично проверяем router_2 и router_3
+
+Подключаемся к  router_2 и проверяем сервис FRR
+
+![pict2](pict/r2_0.png)
+
+Сервис запущен
+
+Проверяем прохождение пинга по сетям
+
+![pict2](pict/r2_1.png)
+
+Видим, что все сети доступны
+
+Посмотрим маршруты до 192.168.30.0 сети с включенным и выключенным интерфейсом enp0s9
+
+![pict2](pict/r2_2.png)
+
+Видим, что при отключении интерфейса марштрут изменяется
+
+Посмотрим таблицу маршрутов роутера
+
+![pict2](pict/r2_3.png)
+
+Убеждаемся, что все маршгруты построены верно
+
+Подключаемся к  router_3 и проверяем сервис FRR
+
+![pict2](pict/r3_0.png)
+
+Сервис запущен
+
+Проверяем прохождение пинга по сетям
+
+![pict2](pict/r3_1.png)
+
+Видим, что все сети доступны
+
+Посмотрим маршруты до 192.168.10.0 сети с включенным и выключенным интерфейсом enp0s9
+
+![pict2](pict/r3_2.png)
+
+Видим, что при отключении интерфейса марштрут изменяется
+
+Посмотрим таблицу маршрутов роутера
+
+![pict2](pict/r3_3.png)
+
+Убеждаемся, что все маршгруты построены верно
+
+### Изобразить ассиметричный роутинг
+
+Добавим в плейбук натройку ассиметричного роутинга
+
+```yaml
+ # Отключаем запрет ассиметричного роутинга 
+  - name: set up asynchronous routing
+    sysctl:
+      name: net.ipv4.conf.all.rp_filter
+      value: '0'
+      state: present
+```
+
+В шалие шаблона frr.conf.j2 изменяем настроки интерфейса enp0s8, добавляем условие
+
+```jinja
+{% if ansible_hostname == 'router1' %}
+ ip ospf cost 1000
+{% else %}
+ !ip ospf cost 450
+{% endif %}
+```
+
+Запускаем плейбук
 
 ```zsh
-┬─[anasha@otus:~/less22]─[12:18:06]
-╰─o$ ssh otus@192.168.57.10
-otus@192.168.57.10's password: 
-Permission denied, please try again.
+┬─[anasha@otus:~/less33]─[16:32:55]
+╰─o$ ansible-playbook -i ansible/hosts -l all ansible/provision.yml -e "host_key_checking=false"
+
+PLAY [OSPF] **************************************************************************************************************
+
+TASK [Gathering Facts] **************************************************************************************************************
+ok: [router1]
+ok: [router2]
+ok: [router3]
+
+...............................................
+
+TASK [set up asynchronous routing] ********************************************************************************************************
+changed: [router1]
+changed: [router3]
+changed: [router2]
+
+TASK [set up OSPF] **************************************************************************************************************
+ok: [router2]
+ok: [router3]
+changed: [router1]
+
+TASK [restart FRR] **************************************************************************************************************
+changed: [router3]
+changed: [router1]
+changed: [router2]
+
+PLAY RECAP **************************************************************************************************************
+router1                    : ok=11   changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+router2                    : ok=11   changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+router3                    : ok=11   changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
 
-Пользователь otus не может войти
+Проверяем работу маршрутизаторов
+
+Заходим на router_1 и запускаем ping от 192.168.10.1 до 192.168.20.1
+
+![pict2](pict/r1_4.png)
+
+Заходим на router_2 и запускаем tcpdump на интерфейсе enp0s9
+
+![pict2](pict/r2_4.png)
+
+А затем на интерфейсе enp0s8
+
+![pict2](pict/r2_5.png)
+
+Видим, что интерфейс enp0s9 только получает трафик с адреса 192.168.10.1, а интерфейс enp0s8 - только отправляет трафик на адрес 192.168.10.1
+
+Таким образом мы видим  ассиметричный роутинг
+
+### Сделать один из линков "дорогим", но что бы при этом роутинг был симметричным
+
+Снова изменим шаблон настроек frr.conf.j2, поменяв условие
+
+```jinja
+{% if ansible_hostname == 'router1' %}
+ !ip ospf cost 1000
+{% elif ansible_hostname == 'router2' and symmetric_routing == true %}
+ !ip ospf cost 1000
+{% else %}
+ !ip ospf cost 450
+{% endif %}
+```
+
+В файл переменных плейбука добавим переменную **symmetric_routing**. Для включения симметричного роутинга присвоим ей значение **true**
+
+Чтобы не выполнять весь плейбук запустим его с тегом **setup_ospf**, благодаря котоому будет выполнени только перенастройка и перезапуск FRR
 
 ```zsh
-┬─[anasha@otus:~/less22]─[12:20:38]
-╰─o$ ssh otusadm@192.168.57.10
-otusadm@192.168.57.10's password: 
-Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 5.15.0-119-generic x86_64)
+┬─[anasha@otus:~/less33]─[16:48:10]
+╰─o$ ansible-playbook -i ansible/hosts -l all ansible/provision.yml -e "host_key_checking=false" -t setup_ospf
 
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/pro
+PLAY [OSPF] **************************************************************************************************************
 
- System information as of Sun Dec  1 09:20:49 UTC 2024
+TASK [Gathering Facts] **************************************************************************************************************
+ok: [router2]
+ok: [router1]
+ok: [router3]
 
-  System load:  0.02              Processes:               106
-  Usage of /:   3.7% of 38.70GB   Users logged in:         0
-  Memory usage: 22%               IPv4 address for enp0s3: 10.0.2.15
-  Swap usage:   0%
+TASK [set up OSPF] **************************************************************************************************************
+ok: [router1]
+ok: [router3]
+changed: [router2]
 
+TASK [restart FRR] **************************************************************************************************************
+changed: [router3]
+changed: [router1]
+changed: [router2]
 
-Expanded Security Maintenance for Applications is not enabled.
-
-0 updates can be applied immediately.
-
-Enable ESM Apps to receive additional future security updates.
-See https://ubuntu.com/esm or run: sudo pro status
-
-
-The list of available updates is more than a week old.
-To check for new updates run: sudo apt update
-New release '24.04.1 LTS' available.
-Run 'do-release-upgrade' to upgrade to it.
-
-
-
-The programs included with the Ubuntu system are free software;
-the exact distribution terms for each program are described in the
-individual files in /usr/share/doc/*/copyright.
-
-Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
-applicable law.
-
-To run a command as administrator (user "root"), use "sudo <command>".
-See "man sudo_root" for details.
-
-otusadm@pam:~$ 
+PLAY RECAP **************************************************************************************************************
+router1                    : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+router2                    : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+router3                    : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
 
-Пользователь otusadm зашел. Посмотрим лог авторизации ssh
+Запускаем ping на router_1 от 192.168.10.1 до 192.168.20.1
 
-```zsh
-otusadm@pam:~$ sudo cat /var/log/auth.log
-[sudo] password for otusadm: 
+![pict2](pict/r1_5.png)
 
-........
+Заходим на router_2 и запускаем tcpdump на интерфейсе enp0s9
 
-Dec  1 09:20:17 ubuntu-jammy sshd[2377]: pam_exec(sshd:auth): Calling /usr/local/bin/login.sh ...
-Dec  1 09:20:17 ubuntu-jammy sshd[2375]: pam_exec(sshd:auth): /usr/local/bin/login.sh failed: exit code 1
-Dec  1 09:20:19 ubuntu-jammy sshd[2375]: Failed password for otus from 192.168.57.1 port 58176 ssh2
-Dec  1 09:20:38 ubuntu-jammy sshd[2375]: Connection closed by authenticating user otus 192.168.57.1 port 58176 [preauth]
-Dec  1 09:20:49 ubuntu-jammy sshd[2384]: pam_exec(sshd:auth): Calling /usr/local/bin/login.sh ...
-Dec  1 09:20:49 ubuntu-jammy sshd[2382]: Accepted password for otusadm from 192.168.57.1 port 52448 ssh2
-Dec  1 09:20:49 ubuntu-jammy sshd[2382]: pam_unix(sshd:session): session opened for user otusadm(uid=1002) by (uid=0)
-Dec  1 09:20:49 ubuntu-jammy systemd-logind[692]: New session 6 of user otusadm.
-Dec  1 09:20:49 ubuntu-jammy systemd: pam_unix(systemd-user:session): session opened for user otusadm(uid=1002) by (uid=0)
+![pict2](pict/r2_6.png)
 
-.........
+Видим, что интерфейс enp0s9 и получает трафик с адреса 192.168.10.1, и отправляет трафик на него же
 
-otusadm@pam:~$ 
-```
-
-По логам видно, что скрипт не разрешает вход пользователю otus, так как он не входит в группу admin, и пускает пользователя otusadm.
+Трафик между роутерами ходит симметрично
 
 Задание на этом выполнено.
 
-Все файлы работы, использованные в задании, доступны на [github](https://github.com/anashoff/otus/blob/master/lesson22)
+Все файлы работы, использованные в задании, доступны на [github](https://github.com/anashoff/otus/blob/master/lesson33)

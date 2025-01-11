@@ -56,12 +56,12 @@
       owner: frr
       group: frr
       mode: 0640
-#  # Отключаем запрет ассиметричного роутинга 
-#   - name: set up asynchronous routing
-#     sysctl:
-#       name: net.ipv4.conf.all.rp_filter
-#       value: '0'
-#       state: present
+  # Отключаем запрет ассиметричного роутинга 
+  - name: set up asynchronous routing
+    sysctl:
+      name: net.ipv4.conf.all.rp_filter
+      value: '0'
+      state: present
   # Копируем файл frr.conf на хосты, указываем владельца и права
   - name: set up OSPF 
     template:
