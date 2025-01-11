@@ -23,10 +23,8 @@ Vagrant-стенд c OSPF
 
 Подготовим [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson33/Vagrantfile)
 
-Сразу включим в него команды для провижининга ansible плейбука
-
 ```ruby
- -*- mode: ruby -*-
+# -*- mode: ruby -*-
 # vim: set ft=ruby :
 
 MACHINES = {
@@ -71,33 +69,22 @@ ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_ed25519.pub").first.strip
 Vagrant.configure("2") do |config|
 
   MACHINES.each do |boxname, boxconfig|
-
+    
     config.vm.define boxname do |box|
-
+   
       box.vm.box = boxconfig[:box_name]
       box.vm.host_name = boxconfig[:vm_name]
-
-      if boxconfig[:vm_name] == "router3"
-       box.vm.provision "ansible" do |ansible|
-        ansible.playbook = "ansible/provision.yml"
-        ansible.inventory_path = "ansible/hosts.ini"
-        ansible.host_key_checking = "false"
-        ansible.limit = "all"
-       end
-      end
-      boxconfig[:net].each do |ipconf|
-        box.vm.network("private_network", ip: ipconf[0], adapter: ipconf[1], netmask: ipconf[2], virtualbox__intnet: ipconf[3])
-      end
       box.vm.provision 'shell', inline: 'mkdir -p /root/.ssh'
       box.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /root/.ssh/authorized_keys"
       box.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys", privileged: false
+      boxconfig[:net].each do |ipconf|
+        box.vm.network("private_network", ip: ipconf[0], adapter: ipconf[1], netmask: ipconf[2], virtualbox__intnet: ipconf[3])
+      end
+
 
      end
   end
 end
-
-
-
 ```
 
 #### Подготовка плейбука ansible
@@ -122,8 +109,11 @@ end
 
 ```ini
 [defaults]
+#Отключение проверки ключа хоста
 host_key_checking = false
+#Указываем имя файла инвентаризации
 inventory = hosts
+#Отключаем игнорирование предупреждений
 command_warnings= false
 ```
 
@@ -139,9 +129,200 @@ router3 ansible_host=192.168.50.12 ansible_user=vagrant router_id=3.3.3.3
 Файл шаблона конфигурации FRR [template/frr.conf..j2](https://github.com/anashoff/otus/blob/master/lesson33/frr.conf.j2)
 
 ```jinja
+!Указание версии FRR
+frr version 10.2.1
+frr defaults traditional
+!Указываем имя машины
+hostname {{ ansible_hostname }}
+log syslog informational
+no ipv6 forwarding
+service integrated-vtysh-config
+!
+!Добавляем информацию об интерфейсе enp0s8
+interface enp0s8
+ !Указываем имя интерфейса
+ description r1-r2
+ !Указываем ip-aдрес и маску 
+ ip address {{ ansible_enp0s8['ipv4']['address'] }}/30
+ !Указываем параметр игнорирования MTU
+ ip ospf mtu-ignore
+ !Если потребуется, можно указать «стоимость» интерфейса
+{% if ansible_hostname == 'router1' %}
+ !ip ospf cost 1000
+{% elif ansible_hostname == 'router2' and symmetric_routing == true %}
+ !ip ospf cost 1000
+{% else %}
+ !ip ospf cost 450
+{% endif %}
+ !Указываем параметры hello-интервала для OSPF пакетов
+ ip ospf hello-interval 10
+ !Указываем параметры dead-интервала для OSPF пакетов
+ !Должно быть кратно предыдущему значению
+ ip ospf dead-interval 30
+!
+interface enp0s9
+ description r1-r3
+ ip address {{ ansible_enp0s9['ipv4']['address'] }}/30
+ ip ospf mtu-ignore
+ !ip ospf cost 45
+ ip ospf hello-interval 10
+ ip ospf dead-interval 30
 
+interface enp0s10
+ description net_{{ ansible_hostname }}
+ ip address {{ ansible_enp0s10['ipv4']['address'] }}/24
+ ip ospf mtu-ignore
+ !ip ospf cost 45
+ ip ospf hello-interval 10
+ ip ospf dead-interval 30 
+!
+!Начало настройки OSPF
+router ospf
+ !Указываем router-id 
+ {% if router_id_enable == false %}!{% endif %}router-id {{ router_id }}
+ !Указываем сети, которые хотим анонсировать соседним роутерам
+ network {{ ansible_enp0s8['ipv4']['network'] }}/30 area 0
+ network {{ ansible_enp0s9['ipv4']['network'] }}/30 area 0
+ network {{ ansible_enp0s10['ipv4']['network'] }}/24 area 0 
 
+!Указываем адрес log-файла
+log file /var/log/frr/frr.log
+default-information originate always
 ```
+
+Файл шаблона настройки демона ospfd в FRR [template/daemons](https://github.com/anashoff/otus/blob/master/lesson33/daemons)
+
+```ini
+# This file tells the frr package which daemons to start.
+#
+# Sample configurations for these daemons can be found in
+# /usr/share/doc/frr/examples/.
+#
+# ATTENTION:
+#
+# When activating a daemon for the first time, a config file, even if it is
+# empty, has to be present *and* be owned by the user and group "frr", else
+# the daemon will not be started by /etc/init.d/frr. The permissions should
+# be u=rw,g=r,o=.
+# When using "vtysh" such a config file is also needed. It should be owned by
+# group "frrvty" and set to ug=rw,o= though. Check /etc/pam.d/frr, too.
+#
+# The watchfrr, zebra and staticd daemons are always started.
+#
+
+bgpd=no
+ospfd=yes
+ospf6d=no
+ripd=no
+ripngd=no
+isisd=no
+pimd=no
+pim6d=no
+ldpd=no
+nhrpd=no
+eigrpd=no
+babeld=no
+sharpd=no
+pbrd=no
+bfdd=no
+fabricd=no
+vrrpd=no
+pathd=no
+
+#
+# If this option is set the /etc/init.d/frr script automatically loads
+# the config via "vtysh -b" when the servers are started.
+# Check /etc/pam.d/frr if you intend to use "vtysh"!
+#
+vtysh_enable=yes
+zebra_options="  -A 127.0.0.1 -s 90000000"
+mgmtd_options="  -A 127.0.0.1"
+bgpd_options="   -A 127.0.0.1"
+ospfd_options="  -A 127.0.0.1"
+ospf6d_options=" -A ::1"
+ripd_options="   -A 127.0.0.1"
+ripngd_options=" -A ::1"
+isisd_options="  -A 127.0.0.1"
+pimd_options="   -A 127.0.0.1"
+pim6d_options="  -A ::1"
+ldpd_options="   -A 127.0.0.1"
+nhrpd_options="  -A 127.0.0.1"
+eigrpd_options=" -A 127.0.0.1"
+babeld_options=" -A 127.0.0.1"
+sharpd_options=" -A 127.0.0.1"
+pbrd_options="   -A 127.0.0.1"
+staticd_options="-A 127.0.0.1"
+bfdd_options="   -A 127.0.0.1"
+fabricd_options="-A 127.0.0.1"
+vrrpd_options="  -A 127.0.0.1"
+pathd_options="  -A 127.0.0.1"
+
+# If you want to pass a common option to all daemons, you can use the
+# "frr_global_options" variable.
+#
+#frr_global_options=""
+
+
+# The list of daemons to watch is automatically generated by the init script.
+# This variable can be used to pass options to watchfrr that will be passed
+# prior to the daemon list.
+#
+# To make watchfrr create/join the specified netns, add the the "--netns"
+# option here. It will only have an effect in /etc/frr/<somename>/daemons, and
+# you need to start FRR with "/usr/lib/frr/frrinit.sh start <somename>".
+#
+#watchfrr_options=""
+
+
+# configuration profile
+#
+#frr_profile="traditional"
+#frr_profile="datacenter"
+
+
+# This is the maximum number of FD's that will be available.  Upon startup this
+# is read by the control files and ulimit is called.  Uncomment and use a
+# reasonable value for your setup if you are expecting a large number of peers
+# in say BGP.
+#
+#MAX_FDS=1024
+
+# Uncomment this option if you want to run FRR as a non-root user. Note that
+# you should know what you are doing since most of the daemons need root
+# to work. This could be useful if you want to run FRR in a container
+# for instance.
+# FRR_NO_ROOT="yes"
+
+# For any daemon, you can specify a "wrap" command to start instead of starting
+# the daemon directly. This will simply be prepended to the daemon invocation.
+# These variables have the form daemon_wrap, where 'daemon' is the name of the
+# daemon (the same pattern as the daemon_options variables).
+#
+# Note that when daemons are started, they are told to daemonize with the `-d`
+# option. This has several implications. For one, the init script expects that
+# when it invokes a daemon, the invocation returns immediately. If you add a
+# wrap command here, it must comply with this expectation and daemonize as
+# well, or the init script will never return. Furthermore, because daemons are
+# themselves daemonized with -d, you must ensure that your wrapper command is
+# capable of following child processes after a fork() if you need it to do so.
+#
+# If your desired wrapper does not support daemonization, you can wrap it with
+# a utility program that daemonizes programs, such as 'daemonize'. An example
+# of this might look like:
+#
+# bgpd_wrap="/usr/bin/daemonize /usr/bin/mywrapper"
+#
+# This is particularly useful for programs which record processes but lack
+# daemonization options, such as perf and rr.
+#
+# If you wish to wrap all daemons in the same way, you may set the "all_wrap"
+# variable.
+#
+#all_wrap=""
+```
+
+
+
 
 Файл [playbook.yaml](https://github.com/anashoff/otus/blob/master/lesson22/playbook.yaml)
 
