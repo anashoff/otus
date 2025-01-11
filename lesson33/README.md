@@ -324,7 +324,7 @@ pathd_options="  -A 127.0.0.1"
 
 
 
-Файл [playbook.yaml](https://github.com/anashoff/otus/blob/master/lesson22/playbook.yaml)
+Файл [provision.yml](https://github.com/anashoff/otus/blob/master/lesson33/provision.yml)
 
 ```yaml
 ---
