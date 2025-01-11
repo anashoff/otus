@@ -18,3 +18,4 @@
 - [lesson19](https://github.com/anashoff/otus/tree/master/lesson19) - Задание 19. Docker
 - [lesson21](https://github.com/anashoff/otus/tree/master/lesson21) - Задание 21. Настройка мониторинга
 - [lesson22](https://github.com/anashoff/otus/tree/master/lesson22) - Задание 22. Vagrant-стенд c PAM
+- [lesson33](https://github.com/anashoff/otus/tree/master/lesson33) - Задание 33. Vagrant-стенд c OSPF
