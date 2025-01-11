@@ -189,6 +189,8 @@ default-information originate always
 
 Файл шаблона настройки демона ospfd в FRR [template/daemons](https://github.com/anashoff/otus/blob/master/lesson33/daemons)
 
+Включаем демон ospfd. Судя по описанию демон zebra запущен всегда
+
 ```ini
 # This file tells the frr package which daemons to start.
 #
@@ -569,7 +571,7 @@ router3                    : ok=10   changed=9    unreachable=0    failed=0    s
       state: present
 ```
 
-В шалие шаблона frr.conf.j2 изменяем настроки интерфейса enp0s8, добавляем условие
+В файле шаблона frr.conf.j2 изменяем настроки интерфейса enp0s8, добавляем условие
 
 ```jinja
 {% if ansible_hostname == 'router1' %}
