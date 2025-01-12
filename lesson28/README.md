@@ -60,8 +60,7 @@ Vagrant-стенд c сетевой лабораторией
 
 ### Теоретическая часть
 
-На основании исходных данных составим таблицу, где будут перечислены все сети организации с указанием адреса сети, маски сети, количества узлов в сети, адреса первого и последнеого хота в сети и широковещательный адрес сети.
-
+На основании исходных данных составим таблицу, где будут перечислены все сети организации с указанием адреса сети, маски сети, количества узлов в сети, адреса первого и последнего хоста в сети и широковещательный адрес сети.
 
 | Имя сети | Сеть | Маска сети | Кол-во узлов | Начальный адрес узла | Конечный адрес узла | Широковещательный адрес |
 | ---  | --- | --- | --- | --- | --- | --- |
@@ -298,8 +297,9 @@ office2Server ansible_host=192.168.50.31 ansible_user=vagrant
 
 Настраиваем NAT на inetRouter
 
+Отключаем UFW на inetRouter  и удаляем его из автозагрузки
+
 ```yaml
-# Отключаем UFW на inetRouter  и удаляем его из автозагрузки
   - name: disable ufw service
     service:
       name: ufw
@@ -326,11 +326,9 @@ office2Server ansible_host=192.168.50.31 ansible_user=vagrant
 и сохраняем его с помощью netfilter-persistent.
 
 ```yaml
-# Добавляем правило NAT на inetRouter
   - name: Add rules
     shell: "iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE"
     when: (ansible_hostname == "inetRouter")
-# И включаем его в автозагрузку
   - name: Save rules
     shell: "netfilter-persistent save"
     when: (ansible_hostname == "inetRouter")
@@ -339,7 +337,6 @@ office2Server ansible_host=192.168.50.31 ansible_user=vagrant
 Включаем форвардинг пакетов на всех роутерах
 
 ```yaml
-# на роутерах включаем форвардинг пакетов
   - name: set up forward packages across routers
     sysctl:
       name: net.ipv4.conf.all.forwarding
@@ -351,7 +348,6 @@ office2Server ansible_host=192.168.50.31 ansible_user=vagrant
 По заданию: удаляем маршруты по умолчанию на интерфейсах eth0, созданные vagrant при разворачивании стенда, чтобы закрыть выход в интернет через эти интерфейсы на всех ВМ, кроме inetRouter
 
 ```yaml
-# отключаем маршрут по умолчанию
   - name: disable default route
     template: 
       src: 00-installer-config.yaml
@@ -378,7 +374,6 @@ network:
 Настраиваем статические маршруты для всех ВМ. Для этого правим файлы настройки netplan, и передаем их на соответствующие ВМ.
 
 ```yaml
-# добавляем статические маршруты
   - name: add default gateway for centralRouter
     template: 
       src: "50-vagrant_{{ansible_hostname}}.yaml"
@@ -563,7 +558,7 @@ network:
       - 192.168.50.31/24
 ```
 
-Для применеия всех настроек перезагружаем хосты
+Для применения всех настроек перезагружаем хосты
 
 ```yaml
 # Перезагружаем все ВМ
