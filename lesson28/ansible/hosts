@@ -1,0 +1,11 @@
+[routers]
+inetRouter ansible_host=192.168.50.10 ansible_user=vagrant  
+centralRouter ansible_host=192.168.50.11 ansible_user=vagrant  
+office1Router ansible_host=192.168.50.20 ansible_user=vagrant  
+office2Router ansible_host=192.168.50.30 ansible_user=vagrant 
+[servers]
+centralServer ansible_host=192.168.50.12 ansible_user=vagrant
+office1Server ansible_host=192.168.50.21 ansible_user=vagrant
+office2Server ansible_host=192.168.50.31 ansible_user=vagrant
+
+

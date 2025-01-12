@@ -1,0 +1,65 @@
+- name: network lab
+  hosts: all
+  become: yes
+  tasks:
+  - name: install base tools
+    apt:
+      name:
+        - traceroute
+        - net-tools
+      state: present
+      update_cache: true
+#  - name: install tools for inetRouter
+#    apt:
+#      name:
+#        - iptables-persistent
+#      state: present
+#      update_cache: true
+#    when: (ansible_hostname == "inetRouter") 
+# Отключаем UFW на inetRouter  и удаляем его из автозагрузки
+  - name: disable ufw service
+    service:
+      name: ufw
+      state: stopped
+      enabled: false
+    when: (ansible_hostname == "inetRouter")
+# Настраиваем NAT на inetRouter
+  - name: Set up NAT on inetRouter
+    template: 
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      mode: "{{ item.mode }}"
+    with_items:
+      - { src: "iptables_rules.ipv4", dest: "/etc/iptables_rules.ipv4", mode: "0644" }
+      - { src: "iptables_restore", dest: "/etc/network/if-pre-up.d/iptables", mode: "0755" }
+    when: (ansible_hostname == "inetRouter")
+# на роутерах включаем форвардинг пакетов
+  - name: set up forward packages across routers
+    sysctl:
+      name: net.ipv4.conf.all.forwarding
+      value: '1'
+      state: present
+    when: "'routers' in group_names"
+# отключаем маршрут по умолчанию
+  - name: disable default route
+    template: 
+      src: 00-installer-config.yaml
+      dest: /etc/netplan/00-installer-config.yaml
+      owner: root
+      group: root
+      mode: 0644
+    when: (ansible_hostname != "inetRouter") 
+# добавляем статические маршруты
+  - name: add default gateway for centralRouter
+    template: 
+      src: "50-vagrant_{{ansible_hostname}}.yaml"
+      dest: /etc/netplan/50-vagrant.yaml
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: restart all hosts
+    reboot:
+      reboot_timeout: 600
