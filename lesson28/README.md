@@ -93,7 +93,7 @@ Vagrant-стенд c сетевой лабораторией
 - 192.168.255.8/29
 - 192.168.255.4/30
 
-#### количество узлов в каждой подсети
+#### Количество узлов в каждой подсети
 
 Указан в таблице 
 
@@ -112,6 +112,8 @@ Vagrant-стенд c сетевой лабораторией
 
 ![pict2](pict/2.png)
 
+#### Подготовка среды выполнения
+
 Будем разворачивать 7 ВМ на ОС Ubuntu 22.04
 
 Подготовим [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson28/Vagrantfile)
@@ -121,62 +123,111 @@ Vagrant-стенд c сетевой лабораторией
 # vim: set ft=ruby :
 
 MACHINES = {
-  :router1 => {
-        :box_name => "ubuntu/focal64",
-        :vm_name => "router1",
+      :inetRouter => {
+        :box_name => "bento/ubuntu-22.04",
+        :vm_name => "inetRouter",
+        #:public => {:ip => '10.10.10.1', :adapter => 1},
         :net => [
-                   ["10.0.10.1", 2, "255.255.255.252", "r1-r2"],
-                   ["10.0.12.1", 3, "255.255.255.252", "r1-r3"],
-                   ["192.168.10.1", 4, "255.255.255.0", "net1"],
-                   ["192.168.50.10", 5],
+                    ["192.168.255.1", 2, "255.255.255.252",  "router-net"], 
+                    ["192.168.50.10", 8, "255.255.255.0"],
                 ]
   },
 
-  :router2 => {
-        :box_name => "ubuntu/focal64",
-        :vm_name => "router2",
+      :centralRouter => {
+        :box_name => "bento/ubuntu-22.04",
+        :vm_name => "centralRouter",
         :net => [
-                   ['10.0.10.2', 2, "255.255.255.252", "r1-r2"],
-                   ['10.0.11.2', 3, "255.255.255.252", "r2-r3"],
-                   ['192.168.20.1', 4, "255.255.255.0", "net2"],
-                   ['192.168.50.11', 5]
+                   ["192.168.255.2",  2, "255.255.255.252",  "router-net"],
+                   ["192.168.0.1",    3, "255.255.255.240",  "dir-net"],
+                   ["192.168.0.33",   4, "255.255.255.240",  "hw-net"],
+                   ["192.168.0.65",   5, "255.255.255.192",  "mgt-net"],
+                   ["192.168.255.9",  6, "255.255.255.252",  "office1-central"],
+                   ["192.168.255.5",  7, "255.255.255.252",  "office2-central"],
+                   ["192.168.50.11",  8, "255.255.255.0"],
+                ]
+  },
+  
+      :centralServer => {
+        :box_name => "bento/ubuntu-22.04",
+        :vm_name => "centralServer",
+        :net => [
+                   ["192.168.0.2",    2, "255.255.255.240",  "dir-net"],
+                   ["192.168.50.12",  8, "255.255.255.0"],
+
+                ]
+  },
+      :office1Router => {
+        :box_name => "bento/ubuntu-22.04",
+        :vm_name => "office1Router",
+        :net => [
+                   ["192.168.255.10",  2,  "255.255.255.252",  "office1-central"],
+                   ["192.168.2.1",     3,  "255.255.255.192",  "dev1-net"],
+                   ["192.168.2.65",    4,  "255.255.255.192",  "test1-net"],
+                   ["192.168.2.129",   5,  "255.255.255.192",  "managers-net"],
+                   ["192.168.2.193",   6,  "255.255.255.192",  "office1-net"],
+                   ["192.168.50.20",   8,  "255.255.255.0"],
                 ]
   },
 
-  :router3 => {
-        :box_name => "ubuntu/focal64",
-        :vm_name => "router3",
+      :office1Server => {
+        :box_name => "bento/ubuntu-22.04",
+        :vm_name => "office1Server",
         :net => [
-                   ['10.0.11.1', 2, "255.255.255.252", "r2-r3"],
-                   ['10.0.12.2', 3, "255.255.255.252", "r1-r3"],
-                   ['192.168.30.1', 4, "255.255.255.0", "net3"],
-                   ['192.168.50.12', 5]
+                   ["192.168.2.130",  2,  "255.255.255.192",  "managers-net"],
+                   ["192.168.50.21",  8,  "255.255.255.0"],
                 ]
+  },
+
+     :office2Router => {
+       :box_name => "bento/ubuntu-22.04",
+       :vm_name => "office2Router",
+       :net => [
+                   ["192.168.255.6",  2,  "255.255.255.252",  "office2-central"],
+                   ["192.168.1.1",    3,  "255.255.255.128",  "dev2-net"],
+                   ["192.168.1.129",  4,  "255.255.255.192",  "test2-net"],
+                   ["192.168.1.193",  5,  "255.255.255.192",  "office2-net"],
+                   ["192.168.50.30",  8,  "255.255.255.0"],
+               ]
+  },
+
+     :office2Server => {
+       :box_name => "bento/ubuntu-22.04",
+       :vm_name => "office2Server",
+       :net => [
+                  ["192.168.1.2",    2,  "255.255.255.128",  "dev2-net"],
+                  ["192.168.50.31",  8,  "255.255.255.0"],
+               ]
   }
-
 }
-
 ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_ed25519.pub").first.strip
 
-
 Vagrant.configure("2") do |config|
-
   MACHINES.each do |boxname, boxconfig|
-    
     config.vm.define boxname do |box|
-   
-      box.vm.box = boxconfig[:box_name]
-      box.vm.host_name = boxconfig[:vm_name]
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxconfig[:vm_name]
+        box.vm.provider "virtualbox" do |v|
+          v.memory = 1024
+          v.cpus = 1
+        end
+
+        boxconfig[:net].each do |ipconf|
+          box.vm.network("private_network", ip: ipconf[0], adapter: ipconf[1], netmask: ipconf[2], virtualbox__intnet: ipconf[3])
+        end
+        
+        if boxconfig.key?(:public)
+          box.vm.network "public_network", boxconfig[:public]
+        end
+
       box.vm.provision 'shell', inline: 'mkdir -p /root/.ssh'
       box.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /root/.ssh/authorized_keys"
       box.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys", privileged: false
-      boxconfig[:net].each do |ipconf|
-        box.vm.network("private_network", ip: ipconf[0], adapter: ipconf[1], netmask: ipconf[2], virtualbox__intnet: ipconf[3])
+
+        
       end
 
-
-     end
   end
+  
 end
 ```
 
@@ -189,225 +240,50 @@ end
 ```text
 ├── ansible
 │   ├── ansible.cfg
-│   ├── defaults
-│   │   └── main.yml
 │   ├── hosts
 │   ├── provision.yml
-│   └── template
-│       ├── daemons
-│       └── frr.conf.j2
+│   └── templates
+│       ├── 00-installer-config.yaml
+│       ├── 50-vagrant_centralRouter.yaml
+│       ├── 50-vagrant_centralServer.yaml
+│       ├── 50-vagrant_inetRouter.yaml
+│       ├── 50-vagrant_office1Router.yaml
+│       ├── 50-vagrant_office1Server.yaml
+│       ├── 50-vagrant_office2Router.yaml
+│       ├── 50-vagrant_office2Server.yaml
+│       ├── iptables_restore
+│       └── iptables_rules.ipv4
 ```
 
-Файл конфигурации [ansible.cfg](https://github.com/anashoff/otus/blob/master/lesson33/ansible.cfg)
+Файл конфигурации [ansible.cfg](https://github.com/anashoff/otus/blob/master/lesson28/ansible.cfg)
 
 ```ini
 [defaults]
-#Отключение проверки ключа хоста
 host_key_checking = false
-#Указываем имя файла инвентаризации
 inventory = hosts
-#Отключаем игнорирование предупреждений
 command_warnings= false
 ```
 
-Файл настроек хостов [hosts](https://github.com/anashoff/otus/blob/master/lesson33/hosts)
+Файл настроек хостов [hosts](https://github.com/anashoff/otus/blob/master/lesson28/hosts)
 
 ```ini
 [routers]
-router1 ansible_host=192.168.50.10 ansible_user=vagrant router_id=1.1.1.1
-router2 ansible_host=192.168.50.11 ansible_user=vagrant router_id=2.2.2.2
-router3 ansible_host=192.168.50.12 ansible_user=vagrant router_id=3.3.3.3
+inetRouter ansible_host=192.168.50.10 ansible_user=vagrant  
+centralRouter ansible_host=192.168.50.11 ansible_user=vagrant  
+office1Router ansible_host=192.168.50.20 ansible_user=vagrant  
+office2Router ansible_host=192.168.50.30 ansible_user=vagrant 
+[servers]
+centralServer ansible_host=192.168.50.12 ansible_user=vagrant
+office1Server ansible_host=192.168.50.21 ansible_user=vagrant
+office2Server ansible_host=192.168.50.31 ansible_user=vagrant
 ```
+Файл 
+
+
 
 Файл шаблона конфигурации FRR template/frr.conf.j2
 
 ```jinja
-!Указание версии FRR
-frr version 10.2.1
-frr defaults traditional
-!Указываем имя машины
-hostname {{ ansible_hostname }}
-log syslog informational
-no ipv6 forwarding
-service integrated-vtysh-config
-!
-!Добавляем информацию об интерфейсе enp0s8
-interface enp0s8
- !Указываем имя интерфейса
- description r1-r2
- !Указываем ip-aдрес и маску 
- ip address {{ ansible_enp0s8['ipv4']['address'] }}/30
- !Указываем параметр игнорирования MTU
- ip ospf mtu-ignore
- !Если потребуется, можно указать «стоимость» интерфейса
- !ip ospf cost 1000
- !Указываем параметры hello-интервала для OSPF пакетов
- ip ospf hello-interval 10
- !Указываем параметры dead-интервала для OSPF пакетов
- !Должно быть кратно предыдущему значению
- ip ospf dead-interval 30
-!
-interface enp0s9
- description r1-r3
- ip address {{ ansible_enp0s9['ipv4']['address'] }}/30
- ip ospf mtu-ignore
- !ip ospf cost 45
- ip ospf hello-interval 10
- ip ospf dead-interval 30
-
-interface enp0s10
- description net_{{ ansible_hostname }}
- ip address {{ ansible_enp0s10['ipv4']['address'] }}/24
- ip ospf mtu-ignore
- !ip ospf cost 45
- ip ospf hello-interval 10
- ip ospf dead-interval 30 
-!
-!Начало настройки OSPF
-router ospf
- !Указываем router-id 
- {% if router_id_enable == false %}!{% endif %}router-id {{ router_id }}
- !Указываем сети, которые хотим анонсировать соседним роутерам
- network {{ ansible_enp0s8['ipv4']['network'] }}/30 area 0
- network {{ ansible_enp0s9['ipv4']['network'] }}/30 area 0
- network {{ ansible_enp0s10['ipv4']['network'] }}/24 area 0 
-
-!Указываем адрес log-файла
-log file /var/log/frr/frr.log
-default-information originate always
-```
-
-Файл шаблона настройки демона ospfd в FRR [template/daemons](https://github.com/anashoff/otus/blob/master/lesson33/daemons)
-
-Включаем демон ospfd. Судя по описанию демон zebra запущен всегда
-
-```ini
-# This file tells the frr package which daemons to start.
-#
-# Sample configurations for these daemons can be found in
-# /usr/share/doc/frr/examples/.
-#
-# ATTENTION:
-#
-# When activating a daemon for the first time, a config file, even if it is
-# empty, has to be present *and* be owned by the user and group "frr", else
-# the daemon will not be started by /etc/init.d/frr. The permissions should
-# be u=rw,g=r,o=.
-# When using "vtysh" such a config file is also needed. It should be owned by
-# group "frrvty" and set to ug=rw,o= though. Check /etc/pam.d/frr, too.
-#
-# The watchfrr, zebra and staticd daemons are always started.
-#
-
-bgpd=no
-ospfd=yes
-ospf6d=no
-ripd=no
-ripngd=no
-isisd=no
-pimd=no
-pim6d=no
-ldpd=no
-nhrpd=no
-eigrpd=no
-babeld=no
-sharpd=no
-pbrd=no
-bfdd=no
-fabricd=no
-vrrpd=no
-pathd=no
-
-#
-# If this option is set the /etc/init.d/frr script automatically loads
-# the config via "vtysh -b" when the servers are started.
-# Check /etc/pam.d/frr if you intend to use "vtysh"!
-#
-vtysh_enable=yes
-zebra_options="  -A 127.0.0.1 -s 90000000"
-mgmtd_options="  -A 127.0.0.1"
-bgpd_options="   -A 127.0.0.1"
-ospfd_options="  -A 127.0.0.1"
-ospf6d_options=" -A ::1"
-ripd_options="   -A 127.0.0.1"
-ripngd_options=" -A ::1"
-isisd_options="  -A 127.0.0.1"
-pimd_options="   -A 127.0.0.1"
-pim6d_options="  -A ::1"
-ldpd_options="   -A 127.0.0.1"
-nhrpd_options="  -A 127.0.0.1"
-eigrpd_options=" -A 127.0.0.1"
-babeld_options=" -A 127.0.0.1"
-sharpd_options=" -A 127.0.0.1"
-pbrd_options="   -A 127.0.0.1"
-staticd_options="-A 127.0.0.1"
-bfdd_options="   -A 127.0.0.1"
-fabricd_options="-A 127.0.0.1"
-vrrpd_options="  -A 127.0.0.1"
-pathd_options="  -A 127.0.0.1"
-
-# If you want to pass a common option to all daemons, you can use the
-# "frr_global_options" variable.
-#
-#frr_global_options=""
-
-
-# The list of daemons to watch is automatically generated by the init script.
-# This variable can be used to pass options to watchfrr that will be passed
-# prior to the daemon list.
-#
-# To make watchfrr create/join the specified netns, add the the "--netns"
-# option here. It will only have an effect in /etc/frr/<somename>/daemons, and
-# you need to start FRR with "/usr/lib/frr/frrinit.sh start <somename>".
-#
-#watchfrr_options=""
-
-
-# configuration profile
-#
-#frr_profile="traditional"
-#frr_profile="datacenter"
-
-
-# This is the maximum number of FD's that will be available.  Upon startup this
-# is read by the control files and ulimit is called.  Uncomment and use a
-# reasonable value for your setup if you are expecting a large number of peers
-# in say BGP.
-#
-#MAX_FDS=1024
-
-# Uncomment this option if you want to run FRR as a non-root user. Note that
-# you should know what you are doing since most of the daemons need root
-# to work. This could be useful if you want to run FRR in a container
-# for instance.
-# FRR_NO_ROOT="yes"
-
-# For any daemon, you can specify a "wrap" command to start instead of starting
-# the daemon directly. This will simply be prepended to the daemon invocation.
-# These variables have the form daemon_wrap, where 'daemon' is the name of the
-# daemon (the same pattern as the daemon_options variables).
-#
-# Note that when daemons are started, they are told to daemonize with the `-d`
-# option. This has several implications. For one, the init script expects that
-# when it invokes a daemon, the invocation returns immediately. If you add a
-# wrap command here, it must comply with this expectation and daemonize as
-# well, or the init script will never return. Furthermore, because daemons are
-# themselves daemonized with -d, you must ensure that your wrapper command is
-# capable of following child processes after a fork() if you need it to do so.
-#
-# If your desired wrapper does not support daemonization, you can wrap it with
-# a utility program that daemonizes programs, such as 'daemonize'. An example
-# of this might look like:
-#
-# bgpd_wrap="/usr/bin/daemonize /usr/bin/mywrapper"
-#
-# This is particularly useful for programs which record processes but lack
-# daemonization options, such as perf and rr.
-#
-# If you wish to wrap all daemons in the same way, you may set the "all_wrap"
-# variable.
-#
-#all_wrap=""
 ```
 
 Файл плейбука provision.yml
