@@ -280,104 +280,304 @@ office2Server ansible_host=192.168.50.31 ansible_user=vagrant
 
 Файл плейбука provision.yml рассмотрим подробнее
 
-
-
-
-
-
-
-
-
-Файл шаблона конфигурации FRR template/frr.conf.j2
-
-```jinja
-```
-
-Файл плейбука provision.yml
+На ВМ загружаем утилиты, которые нам понадобятся для работы
 
 ```yaml
----
-#Начало файла provision.yml
-- name: OSPF
-  #Указываем имя хоста или группу, которые будем настраивать
+- name: network lab
   hosts: all
-  #Параметр выполнения модулей от root-пользователя
   become: yes
-  #Указание файла с дополнителыми переменными (понадобится при добавлении темплейтов)
-  vars_files:
-    - defaults/main.yml
   tasks:
-  # Обновление пакетов и установка vim, traceroute, tcpdump, net-tools
   - name: install base tools
     apt:
       name:
-        - vim
         - traceroute
-        - tcpdump
         - net-tools
       state: present
       update_cache: true
-  #Отключаем UFW и удаляем его из автозагрузки
+```
+
+Настраиваем NAT на inetRouter
+
+```yaml
+# Отключаем UFW на inetRouter  и удаляем его из автозагрузки
   - name: disable ufw service
     service:
       name: ufw
       state: stopped
       enabled: false
-  # Добавляем gpg-key репозитория
-  - name: add gpg frrouting.org
-    apt_key:
-      url: "https://deb.frrouting.org/frr/keys.asc"
-      state: present
-  # Добавляем репозиторий https://deb.frrouting.org/frr
-  - name: add frr repo
-    apt_repository:
-      repo: 'deb https://deb.frrouting.org/frr {{ ansible_distribution_release }} frr-stable'
-      state: present
-  # Обновляем пакеты и устанавливаем FRR
-  - name: install FRR packages
+    when: (ansible_hostname == "inetRouter")
+```
+После перехода системы настройки сетевых интерфейсов с ifupdown на netplan, в частности в Ubuntu 22,  перестали работать старые способы загрузки правил iptables. Перестали выполняться скрипты в /etc/network/if-pre-up.d/, как и в других if-up.d, if-down.d директориях. Для настройки автозагрузки правил iptables устанваливаем утилиту netfilter-persistent.
+
+```yaml
+  - name: install tools for inetRouter
     apt:
-      name: 
-        - frr
-        - frr-pythontools
+      name:
+        - iptables-persistent
       state: present
       update_cache: true
-  # Включаем маршрутизацию транзитных пакетов
+    when: (ansible_hostname == "inetRouter") 
+```
+
+Добавляем правило в iptables: 
+
+```iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE```
+
+и сохраняем его с помощью netfilter-persistent.
+
+```yaml
+# Добавляем правило NAT на inetRouter
+  - name: Add rules
+    shell: "iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE"
+    when: (ansible_hostname == "inetRouter")
+# И включаем его в автозагрузку
+  - name: Save rules
+    shell: "netfilter-persistent save"
+    when: (ansible_hostname == "inetRouter")
+```
+
+Включаем форвардинг пакетов на всех роутерах
+
+```yaml
+# на роутерах включаем форвардинг пакетов
   - name: set up forward packages across routers
     sysctl:
       name: net.ipv4.conf.all.forwarding
       value: '1'
       state: present
-  # Копируем файл daemons на хосты, указываем владельца и права
-  - name: base set up OSPF 
-    template:
-      src: template/daemons
-      dest: /etc/frr/daemons
-      owner: frr
-      group: frr
-      mode: 0640
-  # Копируем файл frr.conf на хосты, указываем владельца и права
-  - name: set up OSPF 
-    template:
-      src: template/frr.conf.j2
-      dest: /etc/frr/frr.conf
-      owner: frr
-      group: frr
-      mode: 0640
-    tags:
-      - setup_ospf
-  # Перезапускам FRR и добавляем в автозагрузку
-  - name: restart FRR
-    service:
-      name: frr
-      state: restarted
-      enabled: true
-    tags:
-      - setup_ospf
+    when: "'routers' in group_names"
 ```
+
+По заданию: удаляем маршруты по умолчанию на интерфейсах eth0, созданные vagrant при разворачивании стенда, чтобы закрыть выход в интернет через эти интерфейсы на всех ВМ, кроме inetRouter
+
+```yaml
+# отключаем маршрут по умолчанию
+  - name: disable default route
+    template: 
+      src: 00-installer-config.yaml
+      dest: /etc/netplan/00-installer-config.yaml
+      owner: root
+      group: root
+      mode: 0644
+    when: (ansible_hostname != "inetRouter") 
+```
+
+Файл [0-installer-config.yaml](https://github.com/anashoff/otus/blob/master/lesson28/ansible/templates/00-installer-config.yaml)
+
+```yaml
+network:
+  ethernets:
+    eth0:
+      dhcp4: true
+      dhcp4-overrides:
+          use-routes: false
+      dhcp6: false
+  version: 2
+```
+
+Настраиваем статические маршруты для всех ВМ. Для этого правим файлы настройки netplan, и передаем их на соответствующие ВМ.
+
+```yaml
+# добавляем статические маршруты
+  - name: add default gateway for centralRouter
+    template: 
+      src: "50-vagrant_{{ansible_hostname}}.yaml"
+      dest: /etc/netplan/50-vagrant.yaml
+      owner: root
+      group: root
+      mode: 0644
+```
+
+Файл [50-vagrant_inetRouter.yaml](https://github.com/anashoff/otus/blob/master/lesson28/ansible/templates/50-vagrant_inetRouter.yaml)
+
+```yaml
+---
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth1:
+      addresses:
+      - 192.168.255.1/30
+      routes:
+      - to: 192.168.0.0/22
+        via: 192.168.255.2
+    eth2:
+      addresses:
+      - 192.168.50.10/24
+```
+
+Файл [50-vagrant_centralRouter.yaml](https://github.com/anashoff/otus/blob/master/lesson28/ansible/templates/50-vagrant_centralRouter.yaml)
+
+```yaml
+---
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth1:
+      addresses:
+      - 192.168.255.2/30
+      routes:
+      - to: 0.0.0.0/0
+        via: 192.168.255.1
+    eth2:
+      addresses:
+      - 192.168.0.1/28
+    eth3:
+      addresses:
+      - 192.168.0.33/28
+    eth4:
+      addresses:
+      - 192.168.0.65/26
+    eth5:
+      addresses:
+      - 192.168.255.9/30
+      routes:
+      - to: 192.168.2.0/24
+        via: 192.168.255.10
+    eth6:
+      addresses:
+      - 192.168.255.5/30
+      routes:
+      - to: 192.168.1.0/24
+        via: 192.168.255.6
+    eth7:
+      addresses:
+      - 192.168.50.11/24
+```
+
+Файл [50-vagrant_centralServer.yaml](https://github.com/anashoff/otus/blob/master/lesson28/ansible/templates/50-vagrant_centralServer.yaml)
+
+```yaml
+---
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth1:
+      addresses:
+      - 192.168.0.2/28
+      routes:
+      - to: 0.0.0.0/0
+        via: 192.168.0.1
+    eth2:
+      addresses:
+      - 192.168.50.12/24
+```
+
+Файл [50-vagrant_office1Router..yaml](https://github.com/anashoff/otus/blob/master/lesson28/ansible/templates/50-vagrant_office1Router.yaml)
+
+```yaml
+---
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth1:
+      addresses:
+      - 192.168.255.10/30
+      routes:
+      - to: 0.0.0.0/0
+        via: 192.168.255.9
+    eth2:
+      addresses:
+      - 192.168.2.1/26
+    eth3:
+      addresses:
+      - 192.168.2.65/26
+    eth4:
+      addresses:
+      - 192.168.2.129/26
+    eth5:
+      addresses:
+      - 192.168.2.193/26
+    eth6:
+      addresses:
+      - 192.168.50.20/24
+```
+
+Файл [50-vagrant_office2Router..yaml](https://github.com/anashoff/otus/blob/master/lesson28/ansible/templates/50-vagrant_office2Router.yaml)
+
+```yaml
+---
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth1:
+      addresses:
+      - 192.168.255.6/30
+      routes: 
+      - to: 0.0.0.0/0
+        via: 192.168.255.5
+    eth2:
+      addresses:
+      - 192.168.1.1/25
+    eth3:
+      addresses:
+      - 192.168.1.129/26
+    eth4:
+      addresses:
+      - 192.168.1.193/26
+    eth5:
+      addresses:
+      - 192.168.50.30/24
+```
+
+Файл [50-vagrant_office1Server.yaml](https://github.com/anashoff/otus/blob/master/lesson28/ansible/templates/50-vagrant_office1Server.yaml)
+
+```yaml
+---
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth1:
+      addresses:
+      - 192.168.2.130/26
+      routes:
+      - to: 0.0.0.0/0
+        via: 192.168.2.129
+    eth2:
+      addresses:
+      - 192.168.50.21/24
+```
+
+Файл [50-vagrant_office2Server.yaml](https://github.com/anashoff/otus/blob/master/lesson28/ansible/templates/50-vagrant_office2Server.yaml)
+
+```yaml
+---
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth1:
+      addresses:
+      - 192.168.1.2/25
+      routes: 
+      - to: 0.0.0.0/0
+        via: 192.168.1.1
+    eth2:
+      addresses:
+      - 192.168.50.31/24
+```
+
+Для применеия всех настроек перезагружаем хосты
+
+```yaml
+# Перезагружаем все ВМ
+  - name: restart all hosts
+    reboot:
+      reboot_timeout: 600
+```
+
+Полный файл плейбука [provision.yml](https://github.com/anashoff/otus/blob/master/lesson28/ansible/provision.yml) находится на GitHub
+
 
 ## Выполнение работы
 
-### Настроить OSPF между машинами
+### Соединить офисы в сеть согласно логической схеме и настроить роутинг
 
 Запускаем Vagrantfile
 
@@ -503,218 +703,76 @@ office1Server              : ok=5    changed=4    unreachable=0    failed=0    s
 office2Router              : ok=6    changed=5    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
 office2Server              : ok=5    changed=4    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
 ┬─[anasha@otus:~/l/ansible]─[15:47:01]
-
 ```
 
-Проверим работу сетевой лаборатории
+### Интернет-трафик со всех серверов должен ходить через inetRouter
 
-Подключаемся к  router_1 и проверяем сервис FRR
+Проверяем на centralServer
 
-![pict2](pict/r1_0.png)
+![pict3](pict/3.png)
 
-Сервис запущен
+п.2 - 192.168.255.1 - адрес inetRouter
 
-Проверяем прохождение пинга по сетям
+Проверяем на office1Server
 
-![pict2](pict/r1_1.png)
+![pict4](pict/4.png)
 
-Видим, что все сети доступны
+п.3 - 192.168.255.1 - адрес inetRouter
 
-Посмотрим маршруты до 192.168.30.0 сети с включенным и выключенным интерфейсом enp0s9
+Проверяем на office2Server
 
-![pict2](pict/r1_2.png)
+![pict5](pict/5.png)
 
-Видим, что при отключении интерфейса марштрут изменяется
+п.3 - 192.168.255.1 - адрес inetRouter
 
-Посмотрим таблицу маршрутов роутера
+Все серверы в интернет выходят через inetRouter
 
-![pict2](pict/r1_3.png)
 
-Убеждаемся, что все маршгруты построены верно
+### Все сервера должны видеть друг друга (должен проходить ping)
 
-Аналогично проверяем router_2 и router_3
 
-Подключаемся к  router_2 и проверяем сервис FRR
+Проверяем на centralServer
 
-![pict2](pict/r2_0.png)
+![pict6](pict/6.png)
 
-Сервис запущен
+192.168.2.130 - адрес office1Server
+192.168.1.2 - адрес office2Server
 
-Проверяем прохождение пинга по сетям
+Проверяем на office1Server
 
-![pict2](pict/r2_1.png)
+![pict7](pict/7.png)
 
-Видим, что все сети доступны
+192.168.0.2 - адрес centralServer
+192.168.1.2 - адрес office2Server
 
-Посмотрим маршруты до 192.168.30.0 сети с включенным и выключенным интерфейсом enp0s9
+Проверяем на office2Server
 
-![pict2](pict/r2_2.png)
+![pict8](pict/8.png)
 
-Видим, что при отключении интерфейса марштрут изменяется
+192.168.0.2 - адрес centralServer
+192.168.2.130 - адрес office1Server
 
-Посмотрим таблицу маршрутов роутера
+Все серверы видят друг друга
 
-![pict2](pict/r2_3.png)
+### У всех новых серверов отключить дефолт на NAT (eth0), который vagrant поднимает для связи
 
-Убеждаемся, что все маршгруты построены верно
-
-Подключаемся к  router_3 и проверяем сервис FRR
-
-![pict2](pict/r3_0.png)
-
-Сервис запущен
-
-Проверяем прохождение пинга по сетям
-
-![pict2](pict/r3_1.png)
-
-Видим, что все сети доступны
-
-Посмотрим маршруты до 192.168.10.0 сети с включенным и выключенным интерфейсом enp0s9
-
-![pict2](pict/r3_2.png)
-
-Видим, что при отключении интерфейса марштрут изменяется
-
-Посмотрим таблицу маршрутов роутера
-
-![pict2](pict/r3_3.png)
-
-Убеждаемся, что все маршгруты построены верно
-
-### Изобразить ассиметричный роутинг
-
-Добавим в плейбук натройку ассиметричного роутинга
+За это отвечает блок в плейбуке
 
 ```yaml
- # Отключаем запрет ассиметричного роутинга 
-  - name: set up asynchronous routing
-    sysctl:
-      name: net.ipv4.conf.all.rp_filter
-      value: '0'
-      state: present
+# отключаем маршрут по умолчанию
+  - name: disable default route
+    template: 
+      src: 00-installer-config.yaml
+      dest: /etc/netplan/00-installer-config.yaml
+      owner: root
+      group: root
+      mode: 0644
+    when: (ansible_hostname != "inetRouter") 
 ```
 
-В файле шаблона frr.conf.j2 изменяем настроки интерфейса enp0s8, добавляем условие
+### Добавить дополнительные сетевые интерфейсы, если потребуется
 
-```jinja
-{% if ansible_hostname == 'router1' %}
- ip ospf cost 1000
-{% else %}
- !ip ospf cost 450
-{% endif %}
-```
 
-Запускаем плейбук
-
-```zsh
-┬─[anasha@otus:~/less33]─[16:32:55]
-╰─o$ ansible-playbook -i ansible/hosts -l all ansible/provision.yml -e "host_key_checking=false"
-
-PLAY [OSPF] **************************************************************************************************************
-
-TASK [Gathering Facts] **************************************************************************************************************
-ok: [router1]
-ok: [router2]
-ok: [router3]
-
-...............................................
-
-TASK [set up asynchronous routing] ********************************************************************************************************
-changed: [router1]
-changed: [router3]
-changed: [router2]
-
-TASK [set up OSPF] **************************************************************************************************************
-ok: [router2]
-ok: [router3]
-changed: [router1]
-
-TASK [restart FRR] **************************************************************************************************************
-changed: [router3]
-changed: [router1]
-changed: [router2]
-
-PLAY RECAP **************************************************************************************************************
-router1                    : ok=11   changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-router2                    : ok=11   changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-router3                    : ok=11   changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-```
-
-Проверяем работу маршрутизаторов
-
-Заходим на router_1 и запускаем ping от 192.168.10.1 до 192.168.20.1
-
-![pict2](pict/r1_4.png)
-
-Заходим на router_2 и запускаем tcpdump на интерфейсе enp0s9
-
-![pict2](pict/r2_4.png)
-
-А затем на интерфейсе enp0s8
-
-![pict2](pict/r2_5.png)
-
-Видим, что интерфейс enp0s9 только получает трафик с адреса 192.168.10.1, а интерфейс enp0s8 - только отправляет трафик на адрес 192.168.10.1
-
-Таким образом мы видим  ассиметричный роутинг
-
-### Сделать один из линков "дорогим", но что бы при этом роутинг был симметричным
-
-Снова изменим шаблон настроек frr.conf.j2, поменяв условие
-
-```jinja
-{% if ansible_hostname == 'router1' %}
- !ip ospf cost 1000
-{% elif ansible_hostname == 'router2' and symmetric_routing == true %}
- !ip ospf cost 1000
-{% else %}
- !ip ospf cost 450
-{% endif %}
-```
-
-В файл переменных плейбука добавим переменную **symmetric_routing**. Для включения симметричного роутинга присвоим ей значение **true**
-
-Чтобы не выполнять весь плейбук запустим его с тегом **setup_ospf**, благодаря котоому будет выполнени только перенастройка и перезапуск FRR
-
-```zsh
-┬─[anasha@otus:~/less33]─[16:48:10]
-╰─o$ ansible-playbook -i ansible/hosts -l all ansible/provision.yml -e "host_key_checking=false" -t setup_ospf
-
-PLAY [OSPF] **************************************************************************************************************
-
-TASK [Gathering Facts] **************************************************************************************************************
-ok: [router2]
-ok: [router1]
-ok: [router3]
-
-TASK [set up OSPF] **************************************************************************************************************
-ok: [router1]
-ok: [router3]
-changed: [router2]
-
-TASK [restart FRR] **************************************************************************************************************
-changed: [router3]
-changed: [router1]
-changed: [router2]
-
-PLAY RECAP **************************************************************************************************************
-router1                    : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-router2                    : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-router3                    : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-```
-
-Запускаем ping на router_1 от 192.168.10.1 до 192.168.20.1
-
-![pict2](pict/r1_5.png)
-
-Заходим на router_2 и запускаем tcpdump на интерфейсе enp0s9
-
-![pict2](pict/r2_6.png)
-
-Видим, что интерфейс enp0s9 и получает трафик с адреса 192.168.10.1, и отправляет трафик на него же
-
-Трафик между роутерами ходит симметрично
 
 Задание на этом выполнено.
 
