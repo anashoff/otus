@@ -277,7 +277,14 @@ centralServer ansible_host=192.168.50.12 ansible_user=vagrant
 office1Server ansible_host=192.168.50.21 ansible_user=vagrant
 office2Server ansible_host=192.168.50.31 ansible_user=vagrant
 ```
-Файл 
+
+Файл плейбука provision.yml рассмотрим подробнее
+
+
+
+
+
+
 
 
 
@@ -415,6 +422,15 @@ changed: [office1Router]
 changed: [office1Server]
 changed: [office2Server]
 
+TASK [install tools for inetRouter] **************************************************************************************************************
+skipping: [centralRouter]
+skipping: [office1Router]
+skipping: [office2Router]
+skipping: [centralServer]
+skipping: [office1Server]
+skipping: [office2Server]
+changed: [inetRouter]
+
 TASK [disable ufw service] **************************************************************************************************************
 skipping: [centralRouter]
 skipping: [office1Router]
@@ -424,35 +440,31 @@ skipping: [office1Server]
 skipping: [office2Server]
 changed: [inetRouter]
 
-TASK [Set up NAT on inetRouter] ***********************************************************************************************************
-skipping: [centralRouter] => (item={'src': 'iptables_rules.ipv4', 'dest': '/etc/iptables_rules.ipv4', 'mode': '0644'}) 
-skipping: [centralRouter] => (item={'src': 'iptables_restore', 'dest': '/etc/network/if-pre-up.d/iptables', 'mode': '0755'}) 
+TASK [Add rules] **************************************************************************************************************
 skipping: [centralRouter]
-skipping: [office1Router] => (item={'src': 'iptables_rules.ipv4', 'dest': '/etc/iptables_rules.ipv4', 'mode': '0644'}) 
-skipping: [office1Router] => (item={'src': 'iptables_restore', 'dest': '/etc/network/if-pre-up.d/iptables', 'mode': '0755'}) 
 skipping: [office1Router]
-skipping: [office2Router] => (item={'src': 'iptables_rules.ipv4', 'dest': '/etc/iptables_rules.ipv4', 'mode': '0644'}) 
-skipping: [office2Router] => (item={'src': 'iptables_restore', 'dest': '/etc/network/if-pre-up.d/iptables', 'mode': '0755'}) 
-skipping: [centralServer] => (item={'src': 'iptables_rules.ipv4', 'dest': '/etc/iptables_rules.ipv4', 'mode': '0644'}) 
 skipping: [office2Router]
-skipping: [centralServer] => (item={'src': 'iptables_restore', 'dest': '/etc/network/if-pre-up.d/iptables', 'mode': '0755'}) 
 skipping: [centralServer]
-skipping: [office1Server] => (item={'src': 'iptables_rules.ipv4', 'dest': '/etc/iptables_rules.ipv4', 'mode': '0644'}) 
-skipping: [office1Server] => (item={'src': 'iptables_restore', 'dest': '/etc/network/if-pre-up.d/iptables', 'mode': '0755'}) 
 skipping: [office1Server]
-skipping: [office2Server] => (item={'src': 'iptables_rules.ipv4', 'dest': '/etc/iptables_rules.ipv4', 'mode': '0644'}) 
-skipping: [office2Server] => (item={'src': 'iptables_restore', 'dest': '/etc/network/if-pre-up.d/iptables', 'mode': '0755'}) 
 skipping: [office2Server]
-changed: [inetRouter] => (item={'src': 'iptables_rules.ipv4', 'dest': '/etc/iptables_rules.ipv4', 'mode': '0644'})
-changed: [inetRouter] => (item={'src': 'iptables_restore', 'dest': '/etc/network/if-pre-up.d/iptables', 'mode': '0755'})
+changed: [inetRouter]
 
-TASK [set up forward packages across routers] *********************************************************************************************
+TASK [Save rules] **************************************************************************************************************
+skipping: [centralRouter]
+skipping: [office1Router]
+skipping: [office2Router]
 skipping: [centralServer]
 skipping: [office1Server]
 skipping: [office2Server]
-changed: [centralRouter]
+changed: [inetRouter]
+
+TASK [set up forward packages across routers] **************************************************************************************************************
+skipping: [centralServer]
+skipping: [office1Server]
+skipping: [office2Server]
 changed: [inetRouter]
 changed: [office2Router]
+changed: [centralRouter]
 changed: [office1Router]
 
 TASK [disable default route] **************************************************************************************************************
@@ -483,14 +495,13 @@ changed: [office1Server]
 changed: [centralServer]
 
 PLAY RECAP *************************************************************************************************************
-centralRouter              : ok=6    changed=5    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
-centralServer              : ok=5    changed=4    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
-inetRouter                 : ok=7    changed=6    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
-office1Router              : ok=6    changed=5    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
-office1Server              : ok=5    changed=4    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
-office2Router              : ok=6    changed=5    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
-office2Server              : ok=5    changed=4    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
-
+centralRouter              : ok=6    changed=5    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+centralServer              : ok=5    changed=4    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
+inetRouter                 : ok=9    changed=8    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+office1Router              : ok=6    changed=5    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+office1Server              : ok=5    changed=4    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
+office2Router              : ok=6    changed=5    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+office2Server              : ok=5    changed=4    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
 ┬─[anasha@otus:~/l/ansible]─[15:47:01]
 
 ```

@@ -9,13 +9,13 @@
         - net-tools
       state: present
       update_cache: true
-#  - name: install tools for inetRouter
-#    apt:
-#      name:
-#        - iptables-persistent
-#      state: present
-#      update_cache: true
-#    when: (ansible_hostname == "inetRouter") 
+  - name: install tools for inetRouter
+    apt:
+      name:
+        - iptables-persistent
+      state: present
+      update_cache: true
+    when: (ansible_hostname == "inetRouter") 
 # Отключаем UFW на inetRouter  и удаляем его из автозагрузки
   - name: disable ufw service
     service:
@@ -23,17 +23,13 @@
       state: stopped
       enabled: false
     when: (ansible_hostname == "inetRouter")
-# Настраиваем NAT на inetRouter
-  - name: Set up NAT on inetRouter
-    template: 
-      src: "{{ item.src }}"
-      dest: "{{ item.dest }}"
-      owner: root
-      group: root
-      mode: "{{ item.mode }}"
-    with_items:
-      - { src: "iptables_rules.ipv4", dest: "/etc/iptables_rules.ipv4", mode: "0644" }
-      - { src: "iptables_restore", dest: "/etc/network/if-pre-up.d/iptables", mode: "0755" }
+# Добавляем правило NAT на inetRouter
+  - name: Add rules
+    shell: "iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE"
+    when: (ansible_hostname == "inetRouter")
+# И включаем его в авозагрузку
+  - name: Save rules
+    shell: "netfilter-persistent save"
     when: (ansible_hostname == "inetRouter")
 # на роутерах включаем форвардинг пакетов
   - name: set up forward packages across routers
@@ -59,7 +55,8 @@
       owner: root
       group: root
       mode: 0644
-
+# Перезагружаем все ВМ
   - name: restart all hosts
     reboot:
       reboot_timeout: 600
+
