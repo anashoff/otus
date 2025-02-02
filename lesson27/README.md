@@ -196,7 +196,7 @@ client ansible_port=2200 ansible_host=127.0.0.1
 4. Init Repo - инициализация репозитория 
 5. Install service & timer - установка сервиса и таймера резервного копирования
 
-Переменные [group_vars/all.yaml]
+Переменные [group_vars/all.yaml](https://github.com/anashoff/otus/blob/master/lesson27/group_vars/all.yaml)
 
 ```yaml
 backup_dir: "/var/backup"     #Директория для бакапов
@@ -225,7 +225,7 @@ borg_repo_password: "Otus1234"                #  пароль шифровани
 
 #### Роль Install borg - установка borg на все ВМ ####
 
-
+Файл роли [install/tasks/main.yaml](https://github.com/anashoff/otus/blob/master/lesson27/roles/install/tasks/main.yaml)
 
 ```yaml
 ---
@@ -239,6 +239,8 @@ borg_repo_password: "Otus1234"                #  пароль шифровани
 ```
 
 #### Роль Configure server -настойка сервера backup ####
+
+Файл роли [server/tasks/main.yaml](https://github.com/anashoff/otus/blob/master/lesson27/roles/server/tasks/main.yaml)
 
 ```yaml
 ---
@@ -264,6 +266,9 @@ borg_repo_password: "Otus1234"                #  пароль шифровани
 ```
 
 #### Роль Configure ssh - настройка ssh-соединение между backup и client ####
+
+Файл роли [ssh_key/tasks/main.yaml](https://github.com/anashoff/otus/blob/master/lesson27/roles/ssh_key/tasks/main.yaml)
+
 
 ```yaml
 ---
@@ -304,6 +309,9 @@ borg_repo_password: "Otus1234"                #  пароль шифровани
 ```
 Хендлер
 
+[ssh_key/handlers/main.yaml](https://github.com/anashoff/otus/blob/master/lesson27/roles/ssh_key/handlers/main.yaml)
+
+
 ```yaml
 - name: restart_ssh
   systemd:
@@ -313,15 +321,21 @@ borg_repo_password: "Otus1234"                #  пароль шифровани
 
 Шаблон файла настройки
 
+[ssh_key/templates/disable_kh.conf.j2](https://github.com/anashoff/otus/blob/master/lesson27/roles/ssh_key/templates/disable_kh.conf.j2)
+
 ```jinja
    StrictHostKeyChecking no
    UserKnownHostsFile=/dev/null
 ```
+
 #### Роль Init Repo - инициализация репозитория ####
+
+Файл роли [init_repo/tasks/main.yaml](https://github.com/anashoff/otus/blob/master/lesson27/roles/init_repo/tasks/main.yaml)
+
 
 ```yaml
 ---
-- name: Выполняем borg init
+- name: Выполняем инициализацию репозитория
   ansible.builtin.command:
     cmd: "borg init --encryption={{encript_type}} {{repo_name}}"
     creates: "{{ repo_name }}/README"  # Проверяем, что репозиторий не создан
@@ -330,37 +344,39 @@ borg_repo_password: "Otus1234"                #  пароль шифровани
 ...
 ```
 
-
-
 #### Роль Install service & timer - установка сервиса и таймера резервного копирования ####
 
+Файл роли [service/tasks/main.yaml](https://github.com/anashoff/otus/blob/master/lesson27/roles/service/tasks/main.yaml)
+
 ```yaml
-  GNU nano 7.2                                                                         /home/anasha/otus/lesson27/roles/service/tasks/main.yaml *                                                                                
 ---
-- name: create service
+- name: Создание сервиса по шаблону из файла
   template: 
     src: templates/service.j2
     dest: /etc/systemd/system/{{service_name}}
     mode: 0644
-- name: create timer
+- name: Создание таймера по шаблону из файла
   template:
     src: templates/timer.j2
     dest: /etc/systemd/system/{{timer_name}}
     mode: 0644
 
-- name: Start timer
+- name: Запускаем таймер и включаем его
   systemd:
     name: "{{ timer_name }}"
     state: started
     enabled: true
     daemon_reload: true
-- name: start service
+- name: Запускаем первый раз резервное копирование, чтобы у таймера появился первый отсчет
   systemd:
     name: "{{ service_name }}"
     state: started
     enabled: true
 ...
 ```
+Шаблоны
+
+[service/templates/service.j2](https://github.com/anashoff/otus/blob/master/lesson27/roles/service/templates/service.j2)
 
 ```jinja
 [Unit]
@@ -391,6 +407,8 @@ ExecStart=/bin/borg prune \
     --keep-yearly {{ keep_yearly }}       \
     ${REPO}
 ```
+[service/templates/timer.j2](https://github.com/anashoff/otus/blob/master/lesson27/roles/service/templates/timer.j2)
+
 
 ```jinja
 [Unit]
@@ -403,171 +421,53 @@ Description={{ description }}
 WantedBy=timers.target
 ```
 
+## Выполнение работы
 
+Создаем  виртуальную среду
 
+```zsh
+┬─[anasha@otus:~/less27]─[15:36:28]
+╰─o$ vagrant up
+```
 
+Затем запускаем плейбук
 
+```zsh
+┬─[anasha@otus:~/less27]─[15:43:54]
+╰─o$ ansible-playbook playbook.yml
+```
 
+Ждем некоторое время, чтобы создалось несколько резервных копий и заходим на client
 
+```zsh
+┬─[anasha@otus:~/less27]─[20:31:23]
+╰─o$ vagrant ssh client
+```
 
+Повышаем привилегии 
 
+```zsh
+vagrant@client:~$ sudo -i
+```
 
+Смотрим логи в journalctl
 
+![pict1](pict/1.png)
 
+............................
 
+............................
 
+![pict2](pict/2.png)
 
+Видим, что резервное копирование выполняется каждые 5 минут
 
+Посмотрим репозиторий
 
+![pict3](pict/3.png)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Видим файлы резервных копий и содержимое одного архива
 
 Задание на этом выполнено.
 
-Все файлы работы, использованные в задании, доступны на [github](https://github.com/anashoff/otus/blob/master/lesson33)
+Все файлы работы, использованные в задании, доступны на [github](https://github.com/anashoff/otus/blob/master/lesson27)
