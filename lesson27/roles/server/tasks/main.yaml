@@ -1,0 +1,19 @@
+---
+- name: Создание пользователя borg
+  user:
+    name: borg
+    shell: /bin/bash
+    create_home: yes
+    state: present
+    comment: "Backup User"
+- name: Проверка и создание каталога /var/backup
+  file:
+    path: "{{backup_dir}}"
+    state: directory
+    owner: borg
+    group: borg
+    mode: '0755'
+    recurse: yes  # Рекурсивное применение прав
+- name: Очистка папки
+  shell:
+    cmd: "rm -rf /var/backup/* /var/backup/.* 2>/dev/null || true"

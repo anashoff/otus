@@ -1,0 +1,32 @@
+---
+- name: Install Borg 
+  hosts: all
+  gather_facts: true
+  become: true
+  roles:
+    - install
+- name: Configure server
+  hosts: backup
+  gather_facts: true
+  become: true
+  roles:
+    - server
+- name: Configure ssh
+  hosts: backup
+  gather_facts: true
+  become: true
+  roles:
+    - ssh_key
+- name: Init Repo
+  hosts: client
+  gather_facts: true
+  become: true
+  roles:
+    - init_repo
+- name: Install service & timer
+  hosts: client
+  gather_facts: true
+  become: true
+  roles:
+    - service
+...

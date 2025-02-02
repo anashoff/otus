@@ -695,3 +695,4 @@ router3                    : ok=3    changed=1    unreachable=0    failed=0    s
 Задание на этом выполнено.
 
 Все файлы работы, использованные в задании, доступны на [github](https://github.com/anashoff/otus/blob/master/lesson33)
+

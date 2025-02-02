@@ -1,0 +1,4 @@
+- name: restart_ssh
+  systemd:
+    name: ssh.service
+    state: restarted

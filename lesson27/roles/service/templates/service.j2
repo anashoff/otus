@@ -1,0 +1,27 @@
+[Unit]
+Description={{ description }}
+
+[Service]
+Type=oneshot
+
+# Парольная фраза
+Environment=BORG_PASSPHRASE={{borg_repo_password}}
+# Репозиторий
+Environment=REPO={{ repo_name }}
+# Что бэкапим
+Environment=BACKUP_TARGET={{ target_name }}
+
+# Создание бэкапа
+ExecStart=/bin/borg create \
+    --stats                \
+    ${REPO}::{{ arch_name }}-{now:%%Y-%%m-%%d_%%H:%%M:%%S} ${BACKUP_TARGET} 
+
+# Проверка бэкапа
+ExecStart=/bin/borg check ${REPO}
+
+# Очистка старых бэкапов
+ExecStart=/bin/borg prune \
+    --keep-daily {{ keep_daily }}      \
+    --keep-monthly {{ keep_monthly }}     \
+    --keep-yearly {{ keep_yearly }}       \
+    ${REPO}

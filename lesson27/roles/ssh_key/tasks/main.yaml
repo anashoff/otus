@@ -1,0 +1,35 @@
+---
+- name: Config ssh service
+  delegate_to: client
+  template:
+    src: templates/disable_kh.conf.j2
+    dest: /etc/ssh/ssh_config.d/disable_kh.conf
+  notify: restart_ssh
+
+- name: Генерируем SSH-ключ на client (если его нет)
+  delegate_to: client  # Выполняем задачу на client
+  community.crypto.openssh_keypair:
+    path: "{{borg_ssh_key_file_path}}"
+    type:  "{{borg_ssh_key_type}}"
+    owner: "{{ client_user }}"
+    group: "{{ client_user }}"
+    mode: '0600'
+
+- name: Получаем публичный ключ с client
+  delegate_to: client  # Выполняем на client
+  ansible.builtin.slurp:
+    src: "{{ borg_ssh_key_file_path }}.pub"
+  register: public_key
+
+- name: Create directories
+  file:
+    path: "{{backup_user_info_home }}/.ssh"
+    state: directory
+    mode: 0755
+
+- name: Добавляем публичный ключ client в authorized_keys на backup
+  ansible.posix.authorized_key:
+    user: "{{borg_user}}"  # Пользователь на backup
+    key: "{{ public_key.content | b64decode }}"
+    state: present
+...

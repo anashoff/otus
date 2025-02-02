@@ -1,0 +1,24 @@
+backup_dir: "/var/backup"     #Директория для бакапов
+description: "Borg Service {{source_name}} Backup "   #   Строка описания сервиса
+service_name: "borg-backup-{{source_name}}.service"    #   Название сервиса
+timer_name: "borg-backup-{{source_name}}.timer"           #  Название таймера
+source_name: "client"    #      Имя источника
+repo_name: "borg@192.168.11.160:{{backup_dir}}"    #    Название репозитория
+arch_name: "{{source_name}}"   #    имя архива
+target_name: "/etc"     #     Каталог источника
+keep_daily: "90"     #       срок хранения дневных архивов
+keep_monthly: "12"   #       срок хранения месячных архивов 
+keep_yearly: "1"     #       срок хранения годовых архивов
+Timer: "OnUnitActiveSec=5min"      #   время срабатывания таймера
+encript_type: "repokey"          #    тип шифрования архивов
+borg_user: "borg"             #    имя пользователя на сервере backup
+borg_group: "borg"            #    имя группы   -//-
+backup_user_info_home: "/home/{{borg_user}}"    #   домашняя папка -//-
+client_user: "root"  # Пользователь на client            
+client_user_info_home: "/root"                  #  домашняя папка
+borg_ssh_key_type: "ed25519"                  #  тип ключа ssh
+borg_ssh_key_name: "id_{{ borg_ssh_key_type }}"                #  имя файла приватного ключа
+borg_ssh_key_file_path: "{{ client_user_info_home }}/.ssh/{{ borg_ssh_key_name }}"             #  путь до ключа
+borg_repo_password: "Otus1234"                #  пароль шифрования репозитария
+
+

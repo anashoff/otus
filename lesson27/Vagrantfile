@@ -1,0 +1,64 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-22.04"
+  config.vm.provider :virtualbox do |v|
+    v.memory = 2048
+    v.cpus = 2
+  end
+  ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_ed25519.pub").first.strip
+  
+  boxes = [
+    { :name => "backup",
+      :net => [
+           ["192.168.11.160",  2, "255.255.255.0", "mynet"],
+            ]
+    },
+    { :name => "client",
+      :net => [
+           ["192.168.11.150",  2, "255.255.255.0", "mynet"],
+           ]
+    },
+  ]
+
+  boxes.each do |opts|
+    config.vm.define opts[:name] do |config|
+      config.vm.hostname = opts[:name]
+      opts[:net].each do |ipconf|
+        config.vm.network("private_network", ip: ipconf[0], adapter: ipconf[1], netmask: ipconf[2],virtualbox__intnet: ipconf[3])
+      end
+
+      config.vm.provision 'shell', inline: 'mkdir -p /root/.ssh'
+      config.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /root/.ssh/authorized_keys"
+      config.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys", privileged: false
+   end
+  end
+
+  config.vm.define "backup" do |backup|
+    backup.vm.provider "virtualbox" do |vb|
+      vb.customize [
+        "createhd",
+        "--filename", "backup_disk.vdi",
+        "--size", 2048
+      ]
+      vb.customize [
+        "storageattach", :id,
+        "--storagectl", "SATA Controller",
+        "--port", 1,
+        "--device", 0,
+        "--type", "hdd",
+        "--medium", "backup_disk.vdi"
+      ]
+    end
+
+    # Инициализация диска
+    backup.vm.provision "shell", inline: <<-SHELL
+      sudo parted /dev/sdb --script mklabel gpt
+      sudo parted /dev/sdb --script mkpart primary ext4 0% 100%
+      sudo mkfs.ext4 /dev/sdb1
+      sudo mkdir -p /var/backup
+      echo '/dev/sdb1 /var/backup ext4 defaults 0 0' | sudo tee -a /etc/fstab
+      sudo mount -a
+    SHELL
+  end
+
+end
+
