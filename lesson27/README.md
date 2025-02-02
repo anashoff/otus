@@ -191,7 +191,7 @@ client ansible_port=2200 ansible_host=127.0.0.1
 Плейбук исполняет 5 ролей:
 
 1. Install borg - установка borg на все ВМ
-2. Configure server -настойка сервера backup
+2. Configure server - настойка сервера backup
 3. Configure ssh - настройка ssh-соединение между backup и client
 4. Init Repo - инициализация репозитория 
 5. Install service & timer - установка сервиса и таймера резервного копирования
@@ -229,12 +229,11 @@ borg_repo_password: "Otus1234"                #  пароль шифровани
 
 ```yaml
 ---
-- name: Выполняем borg init
-  ansible.builtin.command:
-    cmd: "borg init --encryption={{encript_type}} {{repo_name}}"
-    creates: "{{ repo_name }}/README"  # Проверяем, что репозиторий не создан
-  environment:
-    BORG_PASSPHRASE: "{{ borg_repo_password }}"
+- name: install_borg
+  apt:
+    name: borgbackup
+    update_cache: yes
+    state: present
 ...
 ```
 
@@ -251,7 +250,7 @@ borg_repo_password: "Otus1234"                #  пароль шифровани
     create_home: yes
     state: present
     comment: "Backup User"
-- name: Проверка и создание каталога /var/backup
+- name: Проверка и настройка каталога /var/backup
   file:
     path: "{{backup_dir}}"
     state: directory
@@ -259,7 +258,7 @@ borg_repo_password: "Otus1234"                #  пароль шифровани
     group: borg
     mode: '0755'
     recurse: yes  # Рекурсивное применение прав
-- name: Очистка папки /var/backup для использования в качестве репозитория
+- name: Очистка каталога /var/backup для использования в качестве репозитория
   shell:
     cmd: "rm -rf /var/backup/* /var/backup/.* 2>/dev/null || true"
 ...
