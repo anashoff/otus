@@ -173,7 +173,7 @@ inventory = hosts
 command_warnings= false
 ```
 
-Файл настроек хостов [hosts](https://github.com/anashoff/otus/blob/master/lesson37/hosts.ini)
+Файл настроек хостов [hosts.ini](https://github.com/anashoff/otus/blob/master/lesson37/hosts.ini)
 
 ```ini
 [nets]
@@ -282,7 +282,7 @@ NM_CONTROLLED=yes
 USERCTL=no
 ```
 
-Файл плейбука [playbook.yml](https://github.com/anashoff/otus/blob/master/lesson37/templates/playbook.yaml)
+Файл плейбука [playbook.yaml](https://github.com/anashoff/otus/blob/master/lesson37/templates/playbook.yaml)
 
 ```yaml
 # Предварительная настройка
@@ -523,22 +523,11 @@ PING 192.168.255.2 (192.168.255.2) 56(84) bytes of data.
 
 ![pict4](pict/4.png)
 
-Видим, что при отключении интерфейса пинг не прерывается
-
-```text
-.......
-64 bytes from 192.168.255.2: icmp_seq=11 ttl=64 time=1.10 ms
-64 bytes from 192.168.255.2: icmp_seq=12 ttl=64 time=0.725 ms
-64 bytes from 192.168.255.2: icmp_seq=13 ttl=64 time=1.07 ms
-64 bytes from 192.168.255.2: icmp_seq=14 ttl=64 time=0.695 ms
-.......
-```
-
-Включаем интерфейс обратно
+Ждем 10 секунд и включаем интерфейс eth1 обратно
 
 ![pict5](pict/5.png)
 
-Убеждаемся, что все пинг всё еще проходит не преравелся при переключении
+ВОзвращаемся, на первый терминал и убеждаемся, что пинг всё это время проходил без прерываний.
 
 ![pict3](pict/3.png)
 
