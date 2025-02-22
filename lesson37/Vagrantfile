@@ -44,7 +44,7 @@ MACHINES = {
   },
 
   :testServer1 => {
-        :box_name => "centos/stream9",
+        
         :vm_name => "testServer1",
         :net => [
                    {adapter: 2, auto_config: false, virtualbox__intnet: "testLAN"},
