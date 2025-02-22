@@ -22,4 +22,5 @@
 - [lesson28](https://github.com/anashoff/otus/tree/master/lesson28) - Задание 28. Vagrant-стенд c сетевой лабораторией
 - [lesson33](https://github.com/anashoff/otus/tree/master/lesson33) - Задание 33. Vagrant-стенд c OSPF
 - [lesson37](https://github.com/anashoff/otus/tree/master/lesson37) - Задание 37. Vagrant-стенд c VLAN и LACP
+- [lesson38](https://github.com/anashoff/otus/tree/master/lesson38) - Задание 38. LDAP
 - [lesson44](https://github.com/anashoff/otus/tree/master/lesson44) - Задание 44. Репликация MySQL
