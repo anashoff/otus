@@ -107,7 +107,7 @@ client2.otus.lan ansible_host=192.168.57.12 ansible_user=vagrant ansible_ssh_pri
   gather_facts: yes
   become: yes
   tasks:
-  #Установка текстового редактора Vim и chrony
+  #Установка утилит
   - name: install softs on CentOS
     yum:
       name:
@@ -175,6 +175,8 @@ client2.otus.lan ansible_host=192.168.57.12 ansible_user=vagrant ansible_ssh_pri
 ┬─[anasha@otus:~/less38]─[16:09:25]
 ╰─o$ vagrant up
 ```
+
+После запуска виртуальных машин переходим к настройке стенда
 
 #### Установка и настройка FreeIPA сервера
 
