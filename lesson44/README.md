@@ -22,7 +22,7 @@
 
 ### Подготовка среды выполнения
 
-Для выполнения задания развернем 2 виртуальныe машины.
+Для выполнения задания развернём 2 виртуальныe машины.
 
 Используем [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson44/Vagrantfile)
 
@@ -93,9 +93,11 @@ gtid-mode = On
 enforce-gtid-consistency = On
 ```
 
-Кладем их в ```/etc/mysql/conf.d/```
+Кладём их в ***/etc/mysql/conf.d/***
 
-Перезапускаем mysql ```systemctl restart mysql```
+Перезапускаем mysql 
+
+```systemctl restart mysql```
 
 
 Заходим в mysql.
@@ -166,9 +168,11 @@ replicate-ignore-table=bet_odds.events_on_demand
 replicate-ignore-table=bet_odds.v_same_event
 ```
 
-Кладем их в ```/etc/mysql/conf.d/```
+Кладём их в ***/etc/mysql/conf.d/***
 
-Перезапускаем mysql ```systemctl restart mysql```
+Перезапускаем mysql 
+
+```systemctl restart mysql```
 
 Заходим в mysql.
 
@@ -235,7 +239,7 @@ replicate-ignore-table=bet_odds.v_same_event
 
 ![pict30](pict/30.png)
 
-Видим команду INSERT...
+Видим команду **INSERT INTO bookmaker (id,bookmaker_name) VALUES(11,'boom-boom-booooooommm-1xbet');**
 
 Задание на этом выполнено.
 
