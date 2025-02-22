@@ -1,23 +1,58 @@
 # Administrator Linux. Professional
 
-## Урок 37. Домашнее задание
+## Урок 38. Домашнее задание
 
 LDAP
 
 ### Описание домашнего задания
 
 Установить FreeIPA
+
 Написать Ansible-playbook для конфигурации клиента
 
 ### Подготовка среды выполнения
 
 Для выполнения задания развернем 3 виртуальные машины.
 
-Подготовим [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson37/Vagrantfile)
+Подготовим [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson38/Vagrantfile)
 
 ```ruby
 # -*- mode: ruby -*-
 # vim: set ft=ruby :
+Vagrant.configure("2") do |config|
+    # Указываем ОС, версию, количество ядер и ОЗУ
+#    config.vm.box = "generic/centos8"
+#    config.vm.box_version = "20210210.0"
+
+    config.vm.provider :virtualbox do |v|
+      v.memory = 2048
+      v.cpus = 1
+    end
+
+    # Указываем имена хостов и их IP-адреса
+    boxes = [
+      { :box_name => "generic/centos8",
+        :name => "ipa.otus.lan",
+        :ip => "192.168.57.10",
+      },
+      { :box_name => "centos/stream9",
+        :name => "client1.otus.lan",
+        :ip => "192.168.57.11",
+      },
+      { :box_name => "centos/stream9",
+        :name => "client2.otus.lan",
+        :ip => "192.168.57.12",
+      }
+    ]
+    # Цикл запуска виртуальных машин
+    boxes.each do |opts|
+      config.vm.define opts[:name] do |config|
+        config.vm.box = opts[:box_name]
+        config.vm.hostname = opts[:name]
+        config.vm.network "private_network", ip: opts[:ip]
+      end
+    end
+  end
 ```
 #### Подготовка плейбука ansible
 
@@ -30,14 +65,10 @@ LDAP
 ├── hosts.ini
 ├── playbook.yaml
 ├── templates
-│   ├── 50-cloud-init.yaml.j2
-│   ├── ifcfg-bond0.j2
-│   ├── ifcfg-eth1
-│   ├── ifcfg-eth2
-│   └── ifcfg-vlan1.j2
+│   ├── hosts.j2
 ```
 
-Файл конфигурации [ansible.cfg](https://github.com/anashoff/otus/blob/master/lesson37/ansible.cfg)
+Файл конфигурации [ansible.cfg](https://github.com/anashoff/otus/blob/master/lesson38/ansible.cfg)
 
 ```ini
 [defaults]
@@ -49,49 +80,103 @@ inventory = hosts
 command_warnings= false
 ```
 
-Файл настроек хостов [hosts.ini](https://github.com/anashoff/otus/blob/master/lesson37/hosts.ini)
+Файл настроек хостов [hosts.ini](https://github.com/anashoff/otus/blob/master/lesson38/hosts.ini)
 
 ```ini
+[all]
+client1.otus.lan ansible_host=192.168.57.11 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/client1.otus.lan/virtualbox/private_key
+client2.otus.lan ansible_host=192.168.57.12 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/client2.otus.lan/virtualbox/private_key
 ```
 
-
-[template/ifcfg-eth2](https://github.com/anashoff/otus/blob/master/lesson37/templates/ifcfg-eth2)
+[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson38/templates/hosts.j2)
 
 ```jinja
-Имя физического интерфейса
-DEVICE=eth2
-#Включать интерфейс при запуске системы
-ONBOOT=yes
-#Отключение DHCP-клиента
-BOOTPROTO=none
-#Указываем, что порт часть bond-интерфейса
-MASTER=bond0
-#Указываем роль bond
-SLAVE=yes
-NM_CONTROLLED=yes
-USERCTL=no
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.57.10 ipa.otus.lan ipa
+192.168.57.11 client1.otus.lan client1
+192.168.57.12 client2.otus.lan client2
 ```
 
-Файл плейбука [playbook.yaml](https://github.com/anashoff/otus/blob/master/lesson37/templates/playbook.yaml)
+Файл плейбука [playbook.yaml](https://github.com/anashoff/otus/blob/master/lesson38/templates/playbook.yaml)
 
 ```yaml
-# Предварительная настройка
-        reboot_timeout: 3600
+- name: Base set up
+  hosts: all
+  #Выполнять действия от root-пользователя
+  gather_facts: yes
+  become: yes
+  tasks:
+  #Установка текстового редактора Vim и chrony
+  - name: install softs on CentOS
+    yum:
+      name:
+        - nano
+        - chrony
+        - mc
+      state: present
+      update_cache: true
 
+  #Отключение firewalld и удаление его из автозагрузки
+  - name: disable firewalld
+    service:
+      name: firewalld
+      state: stopped
+      enabled: false
+ #Отключение SElinux до перезагрузки
+  - name: disable SElinux now
+    shell: setenforce 0
+    when: ( ansible_facts.selinux.status != "disabled")
+
+  #Отключение SElinux из автозагрузки
+  #Будет применено после перезагрузки
+  - name: disable SElinux
+    selinux:
+      state: disabled
+
+  #Установка временной зоны Европа/Москва
+  - name: Set up timezone
+    timezone:
+      name: "Europe/Moscow"
+
+  #Запуск службы Chrony, добавление её в автозагрузку
+  - name: enable chrony
+    service:
+      name: chronyd
+      state: restarted
+      enabled: true
+
+  #Копирование файла /etc/hosts c правами root:root 0644
+  - name: change /etc/hosts
+    template:
+      src: hosts.j2
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+
+  #Установка клиента Freeipa
+  - name: install module ipa-client
+    yum:
+      name:
+        - freeipa-client
+      state: present
+      update_cache: true
+
+  #Запуск скрипта добавления хоста к серверу
+  - name: add host to ipa-server
+    shell: echo -e "yes\nyes" | ipa-client-install --mkhomedir --domain=OTUS.LAN --server=ipa.otus.lan --no-ntp -p admin -w Otus2025
 ```
+
+
 Запускаем стенд командой 
 
 ```bash
-┬─[anasha@otus:~/less37]─[16:09:25]
+┬─[anasha@otus:~/less38]─[16:09:25]
 ╰─o$ vagrant up
 ```
 
-```
-Стенд установлен и настроен
-
-Проверим работу стенда
-
-#### Установка FreeIPA сервера
+#### Установка и настройка FreeIPA сервера
 
 Установим часовой пояс
 
@@ -481,10 +566,9 @@ Valid starting     Expires            Service principal
 02/22/25 14:32:11  02/23/25 13:49:45  krbtgt/OTUS.LAN@OTUS.LAN
 ```
 
+### Подключение клиентов
 
-### Проверка подклбчения хоста
-
-Заходим на хост 
+Заходим на хост client2
 
 ```
 ┬─[anasha@otus:~/less38]─[19:55:11]
@@ -503,7 +587,7 @@ Valid starting       Expires              Service principal
 02/22/2025 19:55:46  02/23/2025 19:48:39  krbtgt/OTUS.LAN@OTUS.LAN
 ```
 
-заходим на сервер и создаём пользователя otus-user c паролем Otus2025
+Заходим на сервер и создаём пользователя otus-user c паролем Otus2025
 
 ```
 [root@ipa ~]# ipa user-add otus-user --first=Otus --last=User --password
@@ -531,7 +615,8 @@ Added user "otus-user"
   Member of groups: ipausers
   Kerberos keys available: True
 ```
-заходим на client1 и пробуем подключиться к серверу
+
+Заходим на client1 и пробуем подключиться к серверу
 
 ```
 ┬─[anasha@otus:~/less38]─[20:03:05]
@@ -545,75 +630,11 @@ Enter new password:
 Enter it again:
 [root@client1 ~]#
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+на сервере можно посмотреть созданного пользователя в web интерфейсе FreeIPA
 
 ![pict1](pict/1.png)
 
-VLAN1 настроен
-
-#### Настройка VLAN2
-
-Подключаемся к testClient2 и проверяем интерфейсы и ping
-
-![pict2](pict/2.png)
-
-VLAN2 настроен
-
-#### Настройка LACP 
-
-Подключаемся к хосту inetRouter (192.168.255.1) и запускаем ping до centralRouter (192.168.255.2)
-
-```text
-[vagrant@inetRouter ~]$ ping 192.168.255.2
-PING 192.168.255.2 (192.168.255.2) 56(84) bytes of data.
-64 bytes from 192.168.255.2: icmp_seq=1 ttl=64 time=0.610 ms
-```
-
-Затем в другом окне терминала на хосте inetRouter отключаем интерфейс eth1
-
-![pict4](pict/4.png)
-
-Ждем 10 секунд и включаем интерфейс eth1 обратно
-
-![pict5](pict/5.png)
-
-Возвращаемся, на первый терминал и убеждаемся, что пинг всё это время проходил без прерываний.
-
-![pict3](pict/3.png)
-
 Задание на этом выполнено.
 
-Все файлы работы, использованные в задании, доступны на [github](https://github.com/anashoff/otus/blob/master/lesson37)
+Все файлы работы, использованные в задании, доступны на [github](https://github.com/anashoff/otus/blob/master/lesson38)
 
