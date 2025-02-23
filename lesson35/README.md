@@ -89,7 +89,7 @@ ExecStart=/usr/sbin/openvpn --cd /etc/openvpn/ --config %i.conf
 WantedBy=multi-user.target
 ```
 
-[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/server.j2)
+[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/server.conf.j2)
 
 ```jinja
 dev tap
@@ -108,7 +108,7 @@ log /var/log/openvpn.log
 verb 3
 ```
 
-[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/server.j2)
+[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/server1.conf.j2)
 
 ```jinja
 dev tun
