@@ -127,7 +127,7 @@ log /var/log/openvpn.log
 verb 3
 ```
 
-Файл плейбука [vpn_tap.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/vpn_tap.yaml)
+Файл плейбука [vpn_tap.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part1/vpn_tap.yaml)
 
 ```yaml
 ---
@@ -217,7 +217,7 @@ verb 3
         state: started
 ```
 
-Файл плейбука [vpn_tun.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/vpn_tun.yaml)
+Файл плейбука [vpn_tun.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part1/vpn_tun.yaml)
 
 ```yaml
 ---
