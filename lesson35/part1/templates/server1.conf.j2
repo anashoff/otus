@@ -1,0 +1,14 @@
+dev tun
+{% if remote_server %}
+remote {{ remote_server }}
+{% endif %}
+ifconfig {{ server_ip }} 255.255.255.0
+topology subnet
+{% if inventory_hostname == "client" %}
+route 10.10.10.0 255.255.255.0
+{% endif %}
+secret /etc/openvpn/static.key
+comp-lzo
+status /var/log/openvpn-status.log
+log /var/log/openvpn.log
+verb 3

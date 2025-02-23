@@ -1,0 +1,7 @@
+---
+- name: Развертывание OpenVPN сервера с TLS
+  hosts: all
+  gather_facts: true
+  become: yes
+  roles:
+    - openvpn

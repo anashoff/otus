@@ -1,0 +1,15 @@
+---
+# Основные настройки OpenVPN
+vpn_port: 1207
+vpn_subnet: 10.10.10.0
+vpn_netmask: 255.255.255.0
+easy_rsa_path: /usr/share/easy-rsa
+
+# Настройки сертификатов
+ca_name: rasvpn
+client_name: client
+cert_validity_days: 3650
+
+# Пути к файлам
+pki_dir: /etc/openvpn/pki
+client_conf_dir: /etc/openvpn/client

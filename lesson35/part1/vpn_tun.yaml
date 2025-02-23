@@ -1,0 +1,50 @@
+---
+- name: Настройка сервера OpenVPN
+  hosts: server
+  gather_facts: true
+  become: yes
+  tasks:
+    - name: Настройка конфигурации сервера
+      template:
+        src: server1.conf.j2
+        dest: /etc/openvpn/server.conf
+      vars:
+        server_ip: 10.10.10.1
+        remote_server: ""
+
+    - name: Перезагрузка демона systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: Перезапуск сервиса OpenVPN
+      systemd:
+        name: openvpn@server
+        state: restarted
+
+- name: Настройка клиента OpenVPN
+  hosts: client
+  gather_facts: true
+  become: yes
+  tasks:
+
+    - name: Настройка конфигурации клиента
+      template:
+        src: server1.conf.j2
+        dest: /etc/openvpn/server.conf
+      vars:
+        server_ip: 10.10.10.2
+        remote_server: 192.168.56.10
+
+    - name: Копирование юнита systemd
+      template:
+        src: openvpn@.service.j2
+        dest: /etc/systemd/system/openvpn@.service
+
+    - name: Перезагрузка демона systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: перезапуск сервиса OpenVPN
+      systemd:
+        name: openvpn@server
+        state: restarted

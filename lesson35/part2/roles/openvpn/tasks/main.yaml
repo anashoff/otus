@@ -1,0 +1,98 @@
+---
+- name: Установка зависимостей
+  apt:
+    update_cache: yes
+    name:
+      - openvpn
+      - easy-rsa
+    state: present
+
+- name: Создание рабочих директорий
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0700
+  loop:
+    - "{{ pki_dir }}"
+    - "{{ client_conf_dir }}"
+
+- name: Инициализация PKI
+  shell: |
+    {{ easy_rsa_path }}/easyrsa --batch init-pki
+  args:
+    chdir: /etc/openvpn
+    creates: "{{ pki_dir }}/private/ca.key"
+  environment:
+    EASYRSA_KEY_SIZE: "4096"
+    EASYRSA_CA_EXPIRE: "3650"
+    EASYRSA_CERT_EXPIRE: "3650"
+
+- name: Генерация CA
+  shell: |
+    {{ easy_rsa_path }}/easyrsa --batch build-ca nopass
+  args:
+    chdir: /etc/openvpn
+    creates: "{{ pki_dir }}/ca.crt"
+  environment:
+    EASYRSA_BATCH: "1"
+
+- name: Генерация серверных сертификатов
+  shell: |
+    {{ easy_rsa_path }}/easyrsa --batch build-server-full server nopass
+    {{ easy_rsa_path }}/easyrsa gen-dh
+  args:
+    chdir: /etc/openvpn
+    creates: "{{ pki_dir }}/issued/server.crt"
+
+- name: Генерация клиентских сертификатов
+  shell: |
+    {{ easy_rsa_path }}/easyrsa --batch build-client-full client nopass
+  args:
+    chdir: /etc/openvpn
+    creates: "{{ pki_dir }}/issued/client.crt"
+
+- name: Настройка конфигурации сервера
+  template:
+    src: server.conf.j2
+    dest: /etc/openvpn/server.conf
+    mode: 0600
+  notify: Restart OpenVPN
+
+- name: Настройка клиентского маршрута
+  copy:
+    dest: "{{ client_conf_dir }}/{{ client_name }}"
+    content: "route {{ vpn_subnet }} {{ vpn_netmask }}"
+
+- name: Копирование юнита systemd
+  template:
+    src: openvpn@.service.j2
+    dest: /etc/systemd/system/openvpn@.service
+- name: Перезагрузка демона systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Включение и запуск сервиса
+  systemd:
+    name: openvpn@server
+    enabled: yes
+    state: started
+
+- name: Генерация клиентского конфига
+  template:
+    src: client.ovpn.j2
+    dest: "/tmp/{{ client_name }}.ovpn"
+
+- name: Отправка ключей и конфига на управляющую машину
+  fetch:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    flat: yes
+    mode: "{{ item.mode | default('0644') }}"
+  loop: "{{ files_to_fetch }}"
+  vars:
+    files_to_fetch:
+      - { src: '/etc/openvpn/pki/ca.crt', dest: '{{ playbook_dir }}/config/ca.crt' }
+      - { src: '/etc/openvpn/pki/issued/client.crt', dest: '{{ playbook_dir }}/config/client.crt' }
+      - { src: '/etc/openvpn/pki/private/client.key', dest: '{{ playbook_dir }}/config/client.key', mode: '0600' }
+      - { src: '/tmp/{{ client_name }}.ovpn', dest: '{{ playbook_dir }}/config/{{ client_name }}.ovpn' }
+
