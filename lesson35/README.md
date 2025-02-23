@@ -315,7 +315,7 @@ server                     :ok=9changed=6 unreachable=0    failed=0    skipped=0
 
 На клиенте запускаем iperf3 врежиме клиента
 
-![pict1](part1\pict\client_tap.png)
+![pict2](part1\pict\client_tap.png)
 
 
 ### TUN режим VPN
@@ -364,11 +364,11 @@ server                     : ok=4    changed=2    unreachable=0    failed=0    s
 
 Заходим на сервер и запускаем ipref3 в режиме сервера
 
-![pict1](part1\pict\server_tun.png)
+![pict3](part1\pict\server_tun.png)
 
 На клиенте запускаем iperf3 врежиме клиента
 
-![pict1](part1\pict\client_tun.png)
+![pict4](part1\pict\client_tun.png)
 
 Получаем в режиме tap скорость ~ 170 Mbit/sec, в режиме tun - ~ 140 Mbit/sec.
 
