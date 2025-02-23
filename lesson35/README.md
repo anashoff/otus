@@ -73,7 +73,7 @@ server ansible_port=2222 ansible_host=127.0.0.1 ansible_user=vagrant ansible_ssh
 client ansible_port=2200 ansible_host=127.0.0.1 ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/client/virtualbox/private_key
 ```
 
-[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/openvpn@.service.j2)
+[template/openvpn@.service.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/openvpn@.service.j2)
 
 ```jinja
 [Unit]
@@ -89,7 +89,7 @@ ExecStart=/usr/sbin/openvpn --cd /etc/openvpn/ --config %i.conf
 WantedBy=multi-user.target
 ```
 
-[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/server.conf.j2)
+[template/server.conf.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/server.conf.j2)
 
 ```jinja
 dev tap
@@ -108,7 +108,7 @@ log /var/log/openvpn.log
 verb 3
 ```
 
-[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/server1.conf.j2)
+[template/server1.conf.j2](https://github.com/anashoff/otus/blob/master/lesson35/part1/templates/server1.conf.j2)
 
 ```jinja
 dev tun
