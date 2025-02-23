@@ -379,7 +379,8 @@ server                     : ok=4    changed=2    unreachable=0    failed=0    s
 ### Подготовка среды выполнения
 
 Для выполнения задания развернем 1 виртуальную машину. Установим на ней сервер OpenVPN
-Клиента будем использовать нна хосте
+
+Клиента будем запускать на хосте (должен быть установлен клиент OpenVPN)
 
 #### Подготовка к развёртыванию vagrant
 
@@ -413,7 +414,7 @@ end
 ```
 #### Подготовка плейбука ansible
 
-Подготовим плейбук ansible для выполнения работы. Один плей будет развертывать с нуля сервер в режиме tap, второй - переключать его в режим tun.
+Подготовим плейбук ansible для выполнения работы. 
 
 Структура плейбука
 
@@ -439,6 +440,8 @@ end
 │           └── server.conf.j2
 ```
 
+Каталог **config** с содержимым создаются при выполнении плейбука
+
 Файл конфигурации [ansible.cfg](https://github.com/anashoff/otus/blob/master/lesson35/part2/ansible.cfg)
 
 ```ini
@@ -456,7 +459,9 @@ retry_files_enabled = False
 ovpnserver ansible_port=2222 ansible_host=127.0.0.1 ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/server/virtualbox/private_key
 ```
 
-[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/openvpn@.service.j2)
+Шаблоны
+
+[roles/openvpn/template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/openvpn@.service.j2)
 
 ```jinja
 [Unit]
@@ -472,7 +477,7 @@ ExecStart=/usr/sbin/openvpn --cd /etc/openvpn/ --config %i.conf
 WantedBy=multi-user.target
 ```
 
-[template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/server.j2)
+[roles/openvpn/template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/server.j2)
 
 ```jinja
 port {{ vpn_port }}
@@ -495,7 +500,7 @@ log /var/log/openvpn.log
 verb 3
 ```
 
-[template/client.ovpn.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/client.ovpn.j2)
+[roles/openvpn/template/client.ovpn.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/client.ovpn.j2)
 
 ```jinja
 dev tun
@@ -513,7 +518,7 @@ comp-lzo
 verb 3
 ```
 
-Хендлеры [main.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/handlers/main.yaml)
+Хендлеры [roles/openvpn/handlers/main.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/handlers/main.yaml)
 
 ```yaml
   - name: Restart OpenVPN
@@ -534,7 +539,7 @@ verb 3
     - openvpn
 ```
 
-Файл плей [main.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/tasks/main.yaml)
+Файл плей [roles/openvpn/tasks/main.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/tasks/main.yaml)
 
 ```yaml
 ---
@@ -636,7 +641,7 @@ verb 3
       - { src: '/tmp/{{ client_name }}.ovpn', dest: '{{ playbook_dir }}/config/{{ client_name }}.ovpn' }
 ```
 
-Файл глобальных переменных [all.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/group_vars/all.yaml)
+Файл глобальных переменных [roles/openvpn/group_vars/all.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/group_vars/all.yaml)
 
 ```yaml
 ---
