@@ -461,7 +461,7 @@ ovpnserver ansible_port=2222 ansible_host=127.0.0.1 ansible_user=vagrant ansible
 
 Шаблоны
 
-[roles/openvpn/template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/openvpn@.service.j2)
+[roles/openvpn/template/openvpn@.service.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/openvpn@.service.j2)
 
 ```jinja
 [Unit]
@@ -477,7 +477,7 @@ ExecStart=/usr/sbin/openvpn --cd /etc/openvpn/ --config %i.conf
 WantedBy=multi-user.target
 ```
 
-[roles/openvpn/template/hosts.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/server.j2)
+[roles/openvpn/template/server.conf.j2](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/templates/server.conf.j2)
 
 ```jinja
 port {{ vpn_port }}
@@ -641,7 +641,7 @@ verb 3
       - { src: '/tmp/{{ client_name }}.ovpn', dest: '{{ playbook_dir }}/config/{{ client_name }}.ovpn' }
 ```
 
-Файл глобальных переменных [roles/openvpn/group_vars/all.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part2/roles/openvpn/group_vars/all.yaml)
+Файл глобальных переменных [group_vars/all.yaml](https://github.com/anashoff/otus/blob/master/lesson35/part2/group_vars/all.yaml)
 
 ```yaml
 ---
