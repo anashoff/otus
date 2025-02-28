@@ -46,7 +46,7 @@ end
 
 #### Подготовка плейбука ansible
 
-Для развертывания стенда используем [плейбук ansible](https://github.com/anashoff/otus/blob/master/lesson46/playbook.yml)
+Для развертывания стенда используем [плейбук ansible](https://github.com/anashoff/otus/blob/master/lesson46/playbook.yaml)
 
 Плайбук содержит 3 роли
 - postgres_install - начальная настройка хостов node1 и node2
@@ -124,7 +124,7 @@ remote_user = vagrant
 host_key_checking = false
 ```
 
-Файл настроек хостов [hosts.ini](https://github.com/anashoff/otus/blob/master/lesson38/hosts.ini)
+Файл настроек хостов [hosts.ini](https://github.com/anashoff/otus/blob/master/lesson46/hosts.ini)
 
 ```ini
 [all]
