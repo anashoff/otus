@@ -249,7 +249,7 @@ barman ansible_host=192.168.57.13 ansible_user=vagrant ansible_ssh_private_key_f
 ...
 ```
 
-Файл переменных [postgres_replication/defults/main.yaml](https://github.com/anashoff/otus/blob/master/lesson46/roles/postgres_install/defaults/main.yaml)
+Файл переменных [postgres_replication/defults/main.yaml](https://github.com/anashoff/otus/blob/master/lesson46/roles/postgres_replication/defaults/main.yaml)
 
 ```yaml
 ---
@@ -260,7 +260,7 @@ slave_ip: '192.168.57.12'
 ...
 ```
 
-Шаблон [postgres_replication/template/pg_hba.conf.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/postgres_replication/template/pg_hba.conf.j2)
+Шаблон [postgres_replication/templates/pg_hba.conf.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/postgres_replication/templates/pg_hba.conf.j2)
 
 ```jinja
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
@@ -279,7 +279,7 @@ host    replication replication    {{ master_ip }}/32        scram-sha-256
 host    replication replication    {{ slave_ip }}/32        scram-sha-256
 ```
 
-Шаблон [postgres_replication/template/postgresql.conf.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/postgres_replication/template/postgresql.conf.j2)
+Шаблон [postgres_replication/templates/postgresql.conf.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/postgres_replication/templates/postgresql.conf.j2)
 
 ```jinja
 data_directory = '/var/lib/postgresql/14/main'		# use data in another directory
