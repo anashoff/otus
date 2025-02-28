@@ -25,4 +25,4 @@
 - [lesson37](https://github.com/anashoff/otus/tree/master/lesson37) - Задание 37. Vagrant-стенд c VLAN и LACP
 - [lesson38](https://github.com/anashoff/otus/tree/master/lesson38) - Задание 38. LDAP
 - [lesson44](https://github.com/anashoff/otus/tree/master/lesson44) - Задание 44. Репликация MySQL
-- [lesson46](https://github.com/anashoff/otus/tree/master/lesson46) - Задание 46. Репликация PostgreSQL
+- [lesson46](https://github.com/anashoff/otus/tree/master/lesson46) - Задание 46. Репликация Postgres
