@@ -523,7 +523,7 @@ barman_user_password: 'Otus2025'
 ...
 ```
 
-Шаблон [install-barman/templates/.pgpass.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/install-barman/templates/.pgpass.conf.j2)
+Шаблон [install-barman/templates/.pgpass.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/install-barman/templates/.pgpass.j2)
 
 ```jinja
 192.168.57.11:5432:*:barman:Otus2025
