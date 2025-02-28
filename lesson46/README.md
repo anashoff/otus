@@ -523,13 +523,13 @@ barman_user_password: 'Otus2025'
 ...
 ```
 
-Шаблон [install-barman/template/.pgpass.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/install-barman/template/.pgpass.conf.j2)
+Шаблон [install-barman/templates/.pgpass.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/install-barman/templates/.pgpass.conf.j2)
 
 ```jinja
 192.168.57.11:5432:*:barman:Otus2025
 ```
 
-Шаблон [install-barman/template/barman.conf.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/install-barman/template/barman.conf.j2)
+Шаблон [install-barman/templates/barman.conf.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/install-barman/templates/barman.conf.j2)
 
 ```jinja
 [barman]
@@ -553,7 +553,7 @@ last_backup_maximum_age = 4 DAYS
 minimum_redundancy = 1
 ```
 
-Шаблон [install-barman/template/node1.conf.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/install-barman/template/node1.conf.j2)
+Шаблон [install-barman/templates/node1.conf.j2](https://github.com/anashoff/otus/blob/master/lesson46/roles/install-barman/templates/node1.conf.j2)
 
 ```jinja
 [node1]
