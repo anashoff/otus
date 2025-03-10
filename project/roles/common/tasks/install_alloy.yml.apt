@@ -1,0 +1,50 @@
+- name: Create Alloy directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+     - /etc/apt/keyrings
+#    - /etc/alloy
+#    - /var/lib/alloy
+
+- name: Add Grafana GPG key
+  apt_key:
+    url: "https://apt.grafana.com/gpg.key"
+    state: present
+
+- name: Add Grafana repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+    state: present
+    filename: grafana
+    update_cache: yes
+
+- name: Install Promtail
+  apt:
+    name: promtail
+    state: present
+    update_cache: yes
+
+- name: Deploy Alloy config
+  template:
+    src: alloy-config.alloy.j2
+    dest: /etc/alloy/config.alloy
+    mode: 0644
+  notify: Restart Alloy
+
+- name: Create systemd service
+  template:
+    src: alloy.service.j2
+    dest: /etc/systemd/system/alloy.service
+    mode: 0644
+  notify:
+    - Reload systemd
+    - Restart Alloy
+
+- name: Enable and start Alloy service
+  systemd:
+    name: alloy
+    state: started
+    enabled: yes
+    daemon_reload: yes

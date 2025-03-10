@@ -1,0 +1,24 @@
+{% raw %}
+{{ define "telegram.default" }}
+{{ if gt (len .Alerts.Firing) 0 }}
+{{ range .Alerts }}
+<b>🚨 {{ .Status | title }} 🚨</b>
+<b>Тип алерта:</b> {{ .Labels.alertname  }}
+<b>Хост:</b> {{ .Labels.instance  }}
+<b>Имя:</b> {{ .Labels.job  }}
+<b>Время:</b> {{ .StartsAt.Format "02.01.2006 15:04:05" }}UTC
+━━━━━━━━━━━━━━━━
+{{ end }}
+{{ end }}
+{{ if gt (len .Alerts.Resolved) 0 }}
+{{ range .Alerts }}
+<b>✅ {{ .Status | title }} ✅</b>
+<b>Тип алерта:</b> {{ .Labels.alertname  }}
+<b>Хост:</b> {{ .Labels.instance }}
+<b>Имя:</b> {{ .Labels.job  }}
+<b>Время:</b> {{ .StartsAt.Format "2006-01-02 15:04:05" }}UTC
+━━━━━━━━━━━━━━━━
+{{ end }}
+{{ end }}
+{{ end }}
+{% endraw %}

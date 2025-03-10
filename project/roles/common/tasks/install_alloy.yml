@@ -1,0 +1,47 @@
+- name: Download Alloy .deb package
+  get_url:
+    url: "{{ alloy_deb_url }}"
+    dest: "/tmp/alloy-{{ alloy_version }}.deb"
+    mode: "0644"
+    timeout: 30
+  register: download_result
+  until: download_result is succeeded
+  retries: 3
+  delay: 10
+
+- name: Install Alloy package
+  apt:
+    deb: "/tmp/alloy-{{ alloy_version }}.deb"
+    state: present
+    install_recommends: no
+
+- name: Create Alloy configuration directory
+  file:
+    path: "/etc/alloy"
+    state: directory
+    mode: 0755
+
+- name: Deploy Alloy configuration
+  template:
+    src: "alloy_config.alloy.j2"
+    dest: "{{ alloy_config_path }}"
+    mode: 0644
+
+- name: Deploy Alloy service defaults configuration
+  template:
+    src: "alloy.j2"
+    dest: "/etc/default/alloy"
+    mode: 0644
+
+- name: Ensure Alloy service is enabled and running
+  systemd:
+    name: alloy
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+
+
+
+
+

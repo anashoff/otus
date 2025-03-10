@@ -1,0 +1,8 @@
+grafana_repo_url: 
+alloy_version: "1.7.1"
+alloy_deb_url: "https://github.com/grafana/alloy/releases/download/v{{ alloy_version }}/alloy-{{ alloy_version }}-1.amd64.deb"
+alloy_config_path: "/etc/alloy/config.alloy"
+loki_endpoint: "http://192.168.1.56:3100/loki/api/v1/push"
+logs_paths:
+  - "/var/log/syslog"
+#  - "/var/log/nginx/*.log"

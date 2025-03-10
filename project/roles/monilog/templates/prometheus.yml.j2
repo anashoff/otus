@@ -1,0 +1,43 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - alertmanager:9093
+
+rule_files:
+  - /etc/prometheus/alert.rules.yml
+
+scrape_configs:
+  - job_name: 'Prometheus Monitoring Server'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['prometheus:9090']
+  - job_name: 'Web'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['192.168.1.50:9100']
+  - job_name: 'Angie-1'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['192.168.1.51:9100']
+  - job_name: 'Angie-2'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['192.168.1.52:9100']
+  - job_name: 'Database-1'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['192.168.1.53:9100']
+  - job_name: 'Database-2'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['192.168.1.54:9100']
+  - job_name: 'Database Control'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['192.168.1.55:9100']
+

@@ -1,0 +1,135 @@
+---
+##### Установка утилит
+- include_tasks: ../../common/tasks/install_utils.yml
+##### Настройка времени
+- include_tasks: ../../common/tasks/setup_time.yml
+
+#####  Установка docker
+- name: Remove old Docker packages
+  apt:
+    name: "{{ item }}"
+    state: absent
+    purge: yes
+  loop:
+    - docker.io
+    - docker-doc
+    - docker-compose
+    - podman-docker
+    - containerd
+    - runc
+  ignore_errors: yes
+- name: Install required utils
+  apt:
+    name:
+      - curl
+      - ca-certificates
+      - gnupg
+    state: present
+    update_cache: yes
+- name: Create Docker key directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+- name: Download Docker GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+- name: Add Docker repository
+  apt_repository:
+    repo: >-
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu
+      {{ ansible_facts.lsb.codename }}
+      stable
+    state: present
+    filename: docker
+    update_cache: yes
+- name: Install Docker components
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: latest
+    update_cache: yes
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+##### Установка Prometheus, Grafana...
+- name: Create compose directory
+  file:
+    path: "{{ compose_dir }}"
+    state: directory
+    mode: 0755
+
+- name: Deploy Prometheus config
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ compose_dir }}/{{ prometheus_config }}"
+    mode: 0644
+
+- name: Deploy Prometheus datasource config
+  template:
+    src: datasource.yml.j2
+    dest: "{{ compose_dir }}/datasource.yml"
+    mode: 0644
+
+- name: Deploy Alertmanager config
+  template:
+    src: alertmanager.yml.j2
+    dest: "{{ compose_dir }}/{{ alertmanager_config }}"
+    mode: 0644
+
+- name: Deploy Telegram message config
+  template:
+    src: telegram.tmpl.j2
+    dest: "{{ compose_dir }}/{{ telegram_template }}"
+    mode: 0644
+
+- name: Deploy alert rules
+  template:
+    src: alert.rules.yml.j2
+    dest: "{{ compose_dir }}/{{ alert_rules }}"
+    mode: 0644
+
+##### Установка Loki
+#- name: Create Loki config directory
+#  file:
+#    path: /etc/loki
+#    state: directory
+#    mode: 0755
+- name: Deploy Loki config
+  template:
+    src: loki-config.yaml.j2
+    dest: "{{ compose_dir }}/loki-config.yaml"
+    mode: 0644
+
+- name: Deploy Grafana Loki datasource
+  template:
+    src: loki-datasource.yml.j2
+    dest: "{{ compose_dir }}/loki.yml"
+    mode: 0644
+##### Запуск docker compose
+- name: Deploy Docker Compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ compose_dir }}/docker-compose.yml"
+    mode: 0644
+  notify: Restart stack
+
+- name: Start Docker Compose stack
+  command: docker compose -f docker-compose.yml up -d
+  args:
+    chdir: "{{ compose_dir }}"
+  register: compose_output
+  changed_when:
+    - "'Creating' in compose_output.stdout"
+    - or "'Recreating' in compose_output.stdout"
+
+

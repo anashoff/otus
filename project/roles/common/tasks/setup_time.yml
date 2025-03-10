@@ -1,0 +1,7 @@
+---
+- name: Set timezone
+  ansible.builtin.timezone:
+    name: "Europe/Moscow"
+
+- name: Enable NTP synchronization
+  ansible.builtin.command: timedatectl set-ntp true

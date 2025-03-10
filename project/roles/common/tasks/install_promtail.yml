@@ -1,0 +1,55 @@
+
+- name: Create Promtail directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - /etc/promtail
+    - /var/lib/promtail
+- name: Download Promtail binary
+  get_url:
+    url: "https://github.com/grafana/loki/releases/download/v3.4.2/logcli-linux-amd64.zip"
+    dest: "/tmp/promtail-3.4.2.zip"
+    mode: 0755
+  register: download_result
+  until: download_result is succeeded
+  retries: 3
+  delay: 10
+
+- name: Extract Promtail binary
+  unarchive:
+    src: "/tmp/promtail-3.4.2.zip"
+    dest: "/usr/local/bin/"
+    remote_src: yes
+    mode: 0755
+    creates: "/usr/local/bin/promtail-linux-amd64"
+
+- name: Create symbolic link
+  file:
+    src: "/usr/local/bin/promtail-linux-amd64"
+    dest: "/usr/local/bin/promtail"
+    state: link
+    force: yes
+
+- name: Deploy Promtail config
+  template:
+    src: promtail-config.yaml.j2
+    dest: /etc/promtail/config.yaml
+    mode: 0644
+  notify: Restart Promtail
+
+- name: Create systemd service
+  template:
+    src: promtail.service.j2
+    dest: /etc/systemd/system/promtail.service
+    mode: 0644
+  notify:
+    - Reload systemd
+    - Restart Promtail
+- name: Ensure Promtail is running
+  systemd:
+    name: promtail
+    state: started
+    enabled: yes
+    daemon_reload: yes

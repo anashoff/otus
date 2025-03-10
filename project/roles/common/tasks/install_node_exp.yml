@@ -1,0 +1,5 @@
+- name: Install Node Exporter
+  include_role:
+    name: cloudalchemy.node-exporter
+  vars:
+    node_exporter_textfile_directory: /var/lib/node_exporter/textfile_collector

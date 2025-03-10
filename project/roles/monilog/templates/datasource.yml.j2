@@ -1,0 +1,10 @@
+
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://192.168.1.56:9090
+    isDefault: true  # Сделать источником по умолчанию
+    jsonData:
+    version: 1

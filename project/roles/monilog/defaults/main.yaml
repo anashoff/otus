@@ -1,0 +1,9 @@
+compose_dir: /opt/monitoring
+compose_file: docker-compose.yml
+prometheus_config: prometheus.yml
+alertmanager_config: alertmanager.yml
+alert_rules: alert.rules.yml
+telegram_template: telegram.tmpl
+loki_version: "2.9.4"
+promtail_version: "2.9.4"
+grafana_repo_url: "https://apt.grafana.com"

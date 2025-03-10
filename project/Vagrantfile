@@ -1,0 +1,48 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-22.04"
+  config.vm.provider :virtualbox do |v|
+    v.memory = 1024
+    v.cpus = 2
+  end
+  boxes = [
+    { :name => "web",
+      :ip => "192.168.1.50",
+    },
+    { :name => "angie1",
+      :ip => "192.168.1.51",
+    },
+    { :name => "angie2",
+      :ip => "192.168.1.52",
+    },
+    { :name => "db1",
+      :ip => "192.168.1.53",
+    },
+    { :name => "db2",
+      :ip => "192.168.1.54",
+    },
+    { :name => "control",
+      :ip => "192.168.1.55",
+    },
+    { :name => "monilog",
+    :ip => "192.168.1.56",
+    },
+  ]
+    boxes.each do |opts|
+      config.vm.define opts[:name] do |config|
+        config.vm.hostname = opts[:name]
+        config.vm.network "public_network", ip: opts[:ip]
+      end
+
+#      if opts[:name] == boxes.last[:name]
+#        config.vm.provision "ansible" do |ansible|
+#          ansible.playbook = "playbook.yaml"
+#          ansible.inventory_path = "hosts.ini"
+#          ansible.host_key_checking = "false"
+#          ansible.become = "true"
+#          ansible.limit = "all"
+#        end
+ #     end
+
+    end
+end
+

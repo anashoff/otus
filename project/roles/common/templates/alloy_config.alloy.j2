@@ -1,0 +1,25 @@
+{% raw %}
+
+local.file_match "local_files" {
+     path_targets = [{"__path__" = "/var/log/*.log"}]
+     sync_period = "5s"
+ }
+
+ loki.source.file "log_scrape" {
+    targets    = local.file_match.local_files.targets
+    forward_to = [loki.write.loki.receiver]
+    tail_from_end = true
+  }
+
+loki.source.journal "journal_logs" {
+  forward_to =  [loki.write.loki.receiver]
+}
+
+loki.write "loki" {
+        endpoint {
+                url = "http://192.168.1.56:3100/loki/api/v1/push"
+        }
+}
+
+
+{% endraw %}

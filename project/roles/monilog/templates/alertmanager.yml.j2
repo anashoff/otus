@@ -1,0 +1,22 @@
+{% raw %}
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 3h
+  receiver: 'telegram-notifications'
+templates:
+  - '/etc/alertmanager/telegram.tmpl'
+receivers:
+- name: 'telegram-notifications'
+  telegram_configs:
+  - bot_token: "7610710857:AAFHd2HkXitjoff50mefuSwGQEVLV-STrBw"
+    chat_id: -1002245596390
+    api_url: "https://api.telegram.org"
+    message: '{{ template "telegram.default" . }}'
+    parse_mode: HTML
+    send_resolved: true
+
+{% endraw %}
+

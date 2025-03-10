@@ -1,0 +1,4 @@
+- name: Restart stack
+  command: docker compose -f docker-compose.yml restart
+  args:
+    chdir: "{{ compose_dir }}"
