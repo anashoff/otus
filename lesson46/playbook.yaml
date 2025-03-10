@@ -1,0 +1,28 @@
+---
+- name: Общая настройка хостов
+  hosts: all
+  become: yes
+  tasks:
+  - name: install base tools
+    apt:
+      name:
+        - mc
+        - telnet
+      state: present
+      update_cache: true
+
+- name: Установка Postgresql
+  hosts: node1, node2
+  gather_facts: true
+  become: yes
+  roles:
+   - postgres_install
+   - postgres_replication
+- name: Настройка barman
+  hosts: all
+  gather_facts: true
+  become: yes
+  roles:
+   - install-barman
+  tags: barman
+...

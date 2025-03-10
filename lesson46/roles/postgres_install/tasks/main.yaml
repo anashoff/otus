@@ -1,0 +1,17 @@
+---
+- name: Установка Postgresql
+  apt:
+    update_cache: yes
+    name:
+      - acl
+      - postgresql
+      - postgresql-contrib
+      - barman-cli
+    state: present
+- name: управление сервисом
+  service:
+    name: postgresql
+    state: started
+    enabled: true
+
+
