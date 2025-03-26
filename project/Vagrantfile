@@ -1,48 +1,81 @@
 Vagrant.configure("2") do |config|
-  config.vm.box = "bento/ubuntu-22.04"
-  config.vm.provider :virtualbox do |v|
-    v.memory = 1024
-    v.cpus = 2
-  end
   boxes = [
-    { :name => "web",
-      :ip => "192.168.1.50",
-    },
-    { :name => "angie1",
-      :ip => "192.168.1.51",
-    },
-    { :name => "angie2",
-      :ip => "192.168.1.52",
-    },
-    { :name => "db1",
-      :ip => "192.168.1.53",
-    },
-    { :name => "db2",
-      :ip => "192.168.1.54",
-    },
-    { :name => "control",
-      :ip => "192.168.1.55",
-    },
-    { :name => "monilog",
-    :ip => "192.168.1.56",
-    },
+    { :name => "db1",    :ip => "192.168.1.53", :disk => true },
+    { :name => "db2",    :ip => "192.168.1.54", :disk => true },
+    { :name => "web",    :ip => "192.168.1.50", :disk => false },
+    { :name => "angie1", :ip => "192.168.1.51", :disk => false },
+    { :name => "angie2", :ip => "192.168.1.52", :disk => false },
+    { :name => "monilog",:ip => "192.168.1.56", :disk => false }
   ]
-    boxes.each do |opts|
-      config.vm.define opts[:name] do |config|
-        config.vm.hostname = opts[:name]
-        config.vm.network "public_network", ip: opts[:ip]
-      end
 
-#      if opts[:name] == boxes.last[:name]
-#        config.vm.provision "ansible" do |ansible|
+  boxes.each do |machine|
+    config.vm.define machine[:name] do |node|
+      node.vm.box = "bento/ubuntu-22.04"
+      node.vm.hostname = machine[:name]
+
+      # Настройка сети
+      node.vm.network "public_network", ip: machine[:ip]
+
+      # Базовые параметры VirtualBox
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = 4096
+        vb.cpus = 4
+
+        # Добавляем диск только для db1 и db2
+        if machine[:disk]
+          disk_path = File.expand_path("/ssd_storage/extra_disk_#{machine[:name]}")
+
+          # Создаем виртуальный диск
+          vb.customize [
+            "createhd",
+            "--filename", disk_path,
+            "--size", 100 * 1024,  # 150 ГБ в MB
+            "--variant", "Fixed"
+          ]
+
+          # Прикрепляем диск
+          vb.customize [
+            "storageattach", :id,
+            "--storagectl", "SATA Controller",
+            "--port", 1,
+            "--device", 0,
+            "--type", "hdd",
+            "--medium", "#{disk_path}.vdi"
+          ]
+        end
+      end
+     # Автоматическое монтирование диска
+      if machine[:disk]
+        node.vm.provision "shell", privileged: true, inline: <<-SHELL
+          # Проверяем наличие диска
+          if [ -b /dev/sdb ]; then
+            # Создаем раздел
+            echo -e "n\\np\\n1\\n\\n\\nw\\n" | fdisk /dev/sdb
+            # Форматируем в ext4
+            mkfs.ext4 /dev/sdb1
+            # Создаем точку монтирования
+            mkdir -p /storage
+            # Добавляем в fstab
+            echo "/dev/sdb1 /storage ext4 defaults 0 0" >> /etc/fstab
+            # Монтируем все
+            mount -a
+            # Даем права на папку
+            chmod 0777 /storage
+          else
+            echo "Дополнительный диск не обнаружен!"
+          fi
+        SHELL
+      end
+      # Провижининг Ansible только для control-ноды
+#      if machine[:name] == "control"
+#        node.vm.provision "ansible" do |ansible|
 #          ansible.playbook = "playbook.yaml"
 #          ansible.inventory_path = "hosts.ini"
-#          ansible.host_key_checking = "false"
-#          ansible.become = "true"
+#          ansible.host_key_checking = false
+#          ansible.become = true
 #          ansible.limit = "all"
 #        end
- #     end
-
+#      end
     end
+  end
 end
-

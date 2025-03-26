@@ -1,0 +1,48 @@
+- name: Создание нового кластера PostgreSQL с нашими настройками
+  command: pg_createcluster {{ pg_version }} {{ pg_cluster }} --datadir={{ pg_data_dir }} --locale=ru_RU.UTF-8 --port=5432
+  register: create_cluster
+- name: Остановка сервиса PostgreSQL
+  service:
+    name: postgresql
+    state: stopped
+- name: Очищаем каталог с данными
+  file:
+    path: "{{ pg_data_dir }}"
+    state: absent
+- name: Копируем данные с мастера db1 на реплику db2
+  become_user: postgres
+  expect:
+    command: 'pg_basebackup -h 192.168.1.53 -U repluser -p 5432 -D "{{ pg_data_dir }}" -R -P -v'
+    responses:
+      '[Pp]assword.*:': "{{ replicator_password }}"
+    timeout: 3600
+  when: (ansible_hostname == "db2")
+  ignore_errors: true
+- name: Копируем данные с мастера db2 на реплику db1. Процесс занимает около 4 минут. Спасибо за понимание.
+  become_user: postgres
+  expect:
+    command: 'pg_basebackup -h 192.168.1.54 -U repluser -p 5432 -D "{{ pg_data_dir }}" -R -P -v'
+    responses:
+      '[Pp]assword.*:': "{{ replicator_password }}"
+    timeout: 3600
+  when: (ansible_hostname == "db1")
+  ignore_errors: true
+- name: Копируем конфигурационный файл postgresql.conf
+  template:
+    src: postgresql.conf.j2
+    dest:  /etc/postgresql/14/main/postgresql.conf
+    owner: postgres
+    group: postgres
+    mode: '0600'
+- name: Копируем конфигурационный файл pg_hba.conf
+  template:
+    src: pg_hba.conf.j2
+    dest:  /etc/postgresql/14/main/pg_hba.conf
+    owner: postgres
+    group: postgres
+    mode: '0600'
+- name: Запускаем службу PostgreSQL
+  service:
+    name: postgresql
+    state: started
+

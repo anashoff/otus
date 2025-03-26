@@ -1,0 +1,20 @@
+- name: Копирование архива на целевой хост
+  copy:
+    src: templates/html.tar.gz  # Путь к архиву относительно playbook
+    dest: /tmp/html.tar.gz
+- name: Распаковка архива
+  unarchive:
+    src: /tmp/html.tar.gz
+    dest: /usr/share/angie/html
+    remote_src: yes
+- name: Назначение www-data владельцем каталога с сайтом
+  file:
+    path: /usr/share/angie/html
+    owner: www-data
+    group: www-data
+    recurse: yes
+- name: Перезапуск сервиса Angie
+  systemd:
+    name: angie
+    state: restarted
+

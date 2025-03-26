@@ -1,0 +1,9 @@
+---
+- name: Развертывание хоста database-1
+  hosts: db1
+  gather_facts: true
+  become: yes
+  roles:
+    - db1-slave
+...
+

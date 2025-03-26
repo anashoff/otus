@@ -1,0 +1,51 @@
+---
+- name: Развертывание хоста monilog
+  hosts: monilog
+  gather_facts: true
+  become: yes
+  roles:
+    - monilog
+  tags: ml
+
+- name: Развертывание хоста web
+  hosts: web
+  gather_facts: true
+  become: yes
+  roles:
+    - web
+  tags: web
+
+- name: Развертывание хоста angie-1
+  hosts: angie1
+  gather_facts: true
+  become: yes
+  roles:
+    - angie1
+  tags: an1
+
+- name: Развертывание хоста angie-2
+  hosts: angie2
+  gather_facts: true
+  become: yes
+  roles:
+    - angie2
+  tags: an2
+
+- name: Развертывание хоста database-1
+  hosts: db1
+  gather_facts: true
+  become: yes
+  roles:
+    - db1-master
+  tags: db1
+
+- name: Развертывание хоста database-2
+  hosts: db2
+  gather_facts: true
+  become: yes
+  roles:
+    - db2-slave
+  tags: db2
+
+...
+

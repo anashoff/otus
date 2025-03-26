@@ -1,0 +1,24 @@
+---
+- name: Развертывание хоста log
+  hosts: log
+  gather_facts: true
+  become: yes
+  roles:
+    - install_log
+  tags: log
+
+- name: Развертывание хоста web
+  hosts: web
+  gather_facts: true
+  become: yes
+  roles:
+    - install_web
+  tags: web
+
+- name: Развертывание хоста comp
+  hosts: comp
+  gather_facts: true
+  become: yes
+  roles:
+    - install_comp
+  tags: comp

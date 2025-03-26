@@ -1,5 +1,11 @@
-- name: Install Node Exporter
-  include_role:
-    name: cloudalchemy.node-exporter
-  vars:
-    node_exporter_textfile_directory: /var/lib/node_exporter/textfile_collector
+- name: If shit
+  block:
+  - name: Установка Node Exporter из cloudalchemy
+    include_role:
+      name: cloudalchemy.node-exporter
+    vars:
+      node_exporter_textfile_directory: /var/lib/node_exporter/textfile_collector
+  rescue: 
+  - name: happened 
+    ansible.builtin.debug:
+      msg: "always erro in second try"

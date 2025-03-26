@@ -1,0 +1,24 @@
+- name: Загрузка GPG-ключа Angie
+  get_url:
+    url: https://angie.software/keys/angie-signing.gpg
+    dest: /etc/apt/trusted.gpg.d/angie-signing.gpg
+    mode: 0644
+- name: Добавление репозитория Angie
+  copy:
+    dest: /etc/apt/sources.list.d/angie.list
+    content: "deb https://download.angie.software/angie/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }} {{ ansible_distribution_release }} main"
+    owner: root
+    group: root
+    mode: 0644
+- name: Обновление кеша после добавления репозитория
+  apt:
+    update_cache: yes
+- name: Установка пакета Angie, php, php-fpm и прочих утилит
+  apt:
+    name: 
+      - angie
+      - php
+      - php-fpm
+      - php-mbstring
+      - php-pgsql
+    state: present

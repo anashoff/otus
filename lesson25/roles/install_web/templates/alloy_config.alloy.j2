@@ -1,0 +1,62 @@
+
+local.file_match "audit_files" {
+     path_targets = [{ "__path__" = "/var/log/audit/audit.log"}]
+     sync_period = "5s"
+ }
+
+loki.source.file "audit" {
+    targets    = local.file_match.audit_files.targets
+    forward_to = [loki.process.audit.receiver]
+    tail_from_end = true
+  }
+
+loki.process "audit" {
+    forward_to =  [loki.write.loki.receiver]
+
+    stage.static_labels {
+      values = {
+        job  = "audit",
+        service_name = "audit",
+    }
+  }
+}
+
+loki.source.syslog "angie" {
+    listener {
+       address = "127.0.0.1:55514"
+       protocol = "tcp"
+       labels = { job = "angie_access" }
+       syslog_format = "rfc3164"
+
+     }
+
+    listener {
+       address = "127.0.0.1:55514"
+       protocol = "udp"
+       labels = { job = "angie_access" }
+       syslog_format = "rfc3164"
+    }
+    listener {
+       address = "127.0.0.1:55515"
+       protocol = "tcp"
+       labels = { job = "angie_error" }
+       syslog_format = "rfc3164"
+
+     }
+
+    listener {
+       address = "127.0.0.1:55515"
+       protocol = "udp"
+       labels = { job = "angie_error" }
+       syslog_format = "rfc3164"
+    }
+
+     forward_to = [loki.write.loki.receiver]
+}
+
+
+loki.write "loki" {
+        endpoint {
+                url = "http://192.168.57.11:3100/loki/api/v1/push"
+        }
+}

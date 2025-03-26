@@ -1,0 +1,43 @@
+- name: Установка Postgresql
+  apt:
+    update_cache: yes
+    name:
+      - acl
+      - postgresql
+      - postgresql-contrib
+      - barman-cli
+      - locales
+    state: present
+- name: Управление сервисом
+  service:
+    name: postgresql
+    state: started
+    enabled: true
+- name: Установка утилит для управление Postgresql
+  apt:
+    name:
+      - python3-psycopg2
+    state: present
+    update_cache: true
+- name: Generate ru_RU.UTF-8 locale
+  command: locale-gen ru_RU.UTF-8
+  changed_when: false
+
+- name: Создание каталога для хранения данных PostgreSQL
+  file:
+    path: "{{ pg_data_dir }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Остановка сервиса PostgreSQL
+  service:
+    name: postgresql
+    state: stopped
+
+- name: Удаление существующего кластера (при наличии)
+  command: pg_dropcluster {{ pg_version }} {{ pg_cluster }} --stop
+  ignore_errors: yes
+  register: drop_cluster
+  changed_when: drop_cluster.rc == 0

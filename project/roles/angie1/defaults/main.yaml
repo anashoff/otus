@@ -1,1 +1,21 @@
-/home/anasha/project/roles/common/defaults/main.yaml
+grafana_repo_url: 
+alloy_version: "1.7.1"
+alloy_deb_url: "https://github.com/grafana/alloy/releases/download/v{{ alloy_version }}/alloy-{{ alloy_version }}-1.amd64.deb"
+alloy_config_path: "/etc/alloy/config.alloy"
+loki_endpoint: "http://192.168.1.56:3100/loki/api/v1/push"
+logs_paths:
+  - "/var/log/syslog"
+#  - "/var/log/nginx/*.log"
+pg_version: 14
+pg_cluster: main
+pg_data_dir: /storage/postgres
+db_name: lims_full
+db_user: lims
+db_password: qq1qq2qq3
+replicator_password: qq1qq2qq3
+domain: 192.168.1.50
+country_code: RU 
+organization: "IL Test-Puschino"
+ssl_days: 3650
+cert_path: /etc/angie/certs
+ssl_conf_file: default.conf

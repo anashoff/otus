@@ -1,0 +1,8 @@
+---
+##### Установка утилит
+- include_tasks: ../../common/tasks/install_utils.yml
+##### Настройка времени
+- include_tasks: ../../common/tasks/setup_time.yml
+##### Установка alloy для логгирования
+- include_tasks: ../../common/tasks/install_alloy.yml
+

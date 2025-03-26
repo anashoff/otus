@@ -1,1 +1,11 @@
-/home/anasha/project/roles/common/handlers/main.yaml
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+- name: Restart Alloy
+  systemd:
+    name: alloy
+    state: restarted
+- name: Restart Angie
+  systemd:
+    name: angie
+    state: restarted

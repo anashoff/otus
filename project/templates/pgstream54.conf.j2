@@ -1,0 +1,9 @@
+    upstream postgres_servers {
+        server 192.168.1.53:5432 down; # Резервный (отключен)
+        server 192.168.1.54:5432;    # Активный сервер (работает по умолчанию)
+    }
+
+    server {
+        listen 192.168.1.50:5432;
+        proxy_pass postgres_servers;
+    }

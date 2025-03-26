@@ -1,0 +1,15 @@
+---
+##### Установка утилит
+- include_tasks: ../../common/tasks/install_utils.yml
+##### Настройка времени
+- include_tasks: ../../common/tasks/setup_time.yml
+##### Установка node exporter для мониторинга
+- include_tasks: ../../common/tasks/install_node_exp.yml
+  ignore_errors: true
+##### Установка alloy для логгирования
+- include_tasks: ../../common/tasks/install_alloy.yml
+##### Установка PostgreSQL
+- include_tasks: ../../common/tasks/install_pgsql_common.yml
+##### Настраиваем реплику
+- include_tasks: ../../common/tasks/install_pgsql_slave.yml 
+

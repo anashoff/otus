@@ -5,5 +5,28 @@
 - include_tasks: ../../common/tasks/setup_time.yml
 ##### Установка node exporter для мониторинга
 - include_tasks: ../../common/tasks/install_node_exp.yml
+  ignore_errors: true
 ##### Установка promtail для логгирования
 - include_tasks: ../../common/tasks/install_alloy.yml
+##### Установка ANGIE
+- include_tasks: ../../common/tasks/install_angie.yml
+
+- name: Отправка конфигурации angie
+  template:
+    src: "angie.conf.j2"
+    dest: "/etc/angie/angie.conf"
+    mode: 0644
+- name: Отправка конфигурацтт сайта
+  template:
+    src: "default.conf.j2"
+    dest: "/etc/angie/http.d/default.conf"
+    mode: 0644
+- name: Перезапуск angie
+  systemd:
+    name: angie
+    state: restarted
+    enabled: true
+##### Установка САЙТА
+- include_tasks: ../../common/tasks/deploy_site.yml
+
+

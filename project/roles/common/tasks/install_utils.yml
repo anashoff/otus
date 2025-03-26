@@ -1,4 +1,4 @@
-- name: Update apt cache & install common utils
+- name: Установка вспомогательных утилит 
   apt:
     name:
       - net-tools
@@ -10,5 +10,6 @@
       - software-properties-common
       - curl
       - gpg
+      - ca-certificates
     update_cache: true
     state: latest

@@ -1,0 +1,68 @@
+---
+- name: Promote PostgreSQL standby to master
+  hosts: db2  # Укажите целевой хост (db2)
+  become: yes
+  vars:
+    postgres_user: lims
+    postgres_password: "qq1qq2qq3"  # Используйте Ansible Vault для безопасности
+    postgres_db: postgres
+    postgres_port: 5432
+
+  tasks:
+    - name: Check if server is in standby mode
+      community.postgresql.postgresql_query:
+        query: "SELECT pg_is_in_recovery();"
+        login_host: "{{ ansible_eth1.ipv4.address }}"
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_db: "{{ postgres_db }}"
+        port: "{{ postgres_port }}"
+      register: recovery_status
+      changed_when: false  # Задача не меняет состояние системы
+
+    - name: Fail if server is already a master
+      ansible.builtin.fail:
+        msg: "Server is already a master!"
+      when: "'t' not in recovery_status.query_result"
+
+    - name: Promote standby to master
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        query: "SELECT pg_promote(true, 60);"  # Ждать 60 секунд
+        login_host: "{{ ansible_eth1.ipv4.address }}"
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_db: "{{ postgres_db }}"
+        port: "{{ postgres_port }}"
+      register: promote_result
+      when: "'t' in recovery_status.query_result"
+
+    - name: Verify promotion result
+      ansible.builtin.debug:
+        msg: "Promotion successful: {{ promote_result.query_result }}"
+      when: promote_result is defined and promote_result.query_result[0][0] == 't'
+
+    - name: Check new status
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        query: "SELECT pg_is_in_recovery();"
+        login_host: "{{ ansible_eth1.ipv4.address }}"
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_db: "{{ postgres_db }}"
+        port: "{{ postgres_port }}"
+      register: new_status
+      changed_when: false
+- name: Promote angie balancer config to master
+  hosts: web
+  become: yes
+  tasks:
+  - name: Deploy stream balancer configuration
+    template:
+      src: "pgstream54.conf.j2"
+      dest: "/etc/angie/stream-enabled/pgstream.conf"
+      mode: 0644
+  - name: Reload Angie config
+    systemd:
+      name: angie
+      state: reloaded

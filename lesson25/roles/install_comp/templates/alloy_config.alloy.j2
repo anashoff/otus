@@ -1,0 +1,22 @@
+loki.relabel "journal" {
+  forward_to = []
+  rule {
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+}
+
+loki.source.journal "{{ansible_facts.hostname}}_journal" {
+
+    relabel_rules = loki.relabel.journal.rules
+    forward_to =  [loki.write.loki.receiver]
+}
+
+
+loki.write "loki" {
+        endpoint {
+                url = "http://192.168.57.11:3100/loki/api/v1/push"
+        }
+}
+
+

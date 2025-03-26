@@ -1,0 +1,39 @@
+---
+##### Установка утилит
+- include_tasks: ../../common/tasks/install_utils.yml
+##### Настройка времени
+- include_tasks: ../../common/tasks/setup_time.yml
+##### Установка alloy для логгирования
+- include_tasks: ../../common/tasks/install_alloy.yml
+##### Установка ANGIE
+- name: Загрузка GPG-ключа Angie
+  get_url:
+    url: https://angie.software/keys/angie-signing.gpg
+    dest: /etc/apt/trusted.gpg.d/angie-signing.gpg
+    mode: 0644
+- name: Добавление репозитория Angie
+  copy:
+    dest: /etc/apt/sources.list.d/angie.list
+    content: "deb https://download.angie.software/angie/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }} {{ ansible_distribution_release }} main"
+    owner: root
+    group: root
+    mode: 0644
+- name: Обновление кеша после добавления репозитория
+  apt:
+    update_cache: yes
+- name: Установка пакета Angie, php, php-fpm и прочих утилит
+  apt:
+    name:
+      - angie
+    state: present
+- name: Передача конфигурации Angie
+  template:
+    src: "angie.conf.j2"
+    dest: "/etc/angie/angie.conf"
+    mode: 0644
+
+- name: Перезапуск Angie 
+  systemd:
+    name: angie
+    state: restarted
+    enabled: true

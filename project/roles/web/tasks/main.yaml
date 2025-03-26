@@ -5,5 +5,62 @@
 - include_tasks: ../../common/tasks/setup_time.yml
 ##### Установка node exporter для мониторинга
 - include_tasks: ../../common/tasks/install_node_exp.yml
-##### Установка promtail для логгирования
+  ignore_errors: true
+##### Установка alloy для логгирования
 - include_tasks: ../../common/tasks/install_alloy.yml
+##### Установка angie для логгирования
+- include_tasks: ../../common/tasks/install_angie.yml
+##### Настройка балансировщика angie
+- name: Создание каталога Angie для конфигурации сайтов
+  file:
+    path: "/etc/angie/site-enabled"
+    state: directory
+    mode: 0755
+- name: Создание каталога Angie для конфигурации stream
+  file:
+    path: "/etc/angie/stream-enabled"
+    state: directory
+    mode: 0755
+- name: Передача конфигурации Angie
+  template:
+    src: "angie.conf.j2"
+    dest: "/etc/angie/angie.conf"
+    mode: 0644
+- name: Передача конфигурации прокси сайтов Angie
+  template:
+    src: "balance.conf.j2"
+    dest: "/etc/angie/site-enabled/balance.conf"
+    mode: 0644
+- name: Передача конфигурации прокси L4
+  template:
+    src: "pgstream.conf.j2"
+    dest: "/etc/angie/stream-enabled/pgstream.conf"
+    mode: 0644
+
+- name: Создание каталога для SSL  сертификата
+  ansible.builtin.file:
+    path: "{{ cert_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Генерация приватного SSL ключа
+  community.crypto.openssl_privatekey:
+    path: "{{ cert_path }}/selfsigned.key"
+    type: RSA
+    size: 2048
+    mode: '0600'
+
+- name: Генерация самоподписного сертификата
+  community.crypto.x509_certificate:
+    path: "{{ cert_path }}/selfsigned.crt"
+    privatekey_path: "{{ cert_path }}/selfsigned.key"
+    provider: selfsigned
+    selfsigned_not_after: "+3650d"
+    mode: '0644'
+
+- name: Перезагрузка Angie
+  systemd:
+    name: angie
+    state: reloaded
+
+

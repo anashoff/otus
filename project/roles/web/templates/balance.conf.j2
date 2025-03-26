@@ -1,0 +1,50 @@
+upstream backend {
+    server 192.168.1.51:80 weight=1;
+    server 192.168.1.52:80 weight=1;
+}
+
+server {
+
+    listen 443 ssl;
+    server_name {{ domain }};
+
+    ssl_certificate {{ cert_path }}/selfsigned.crt;
+    ssl_certificate_key {{ cert_path }}/selfsigned.key;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256; 
+
+    location / {
+        # Основные настройки проксирования
+        proxy_pass http://backend;
+
+        # Передача оригинальных заголовков
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Настройки кэширования (раскомментируйте при необходимости)
+        # proxy_cache one;
+        proxy_cache_valid 200 1h;
+        proxy_cache_lock on;
+        proxy_cache_use_stale updating error timeout invalid_header http_500 http_502 http_504;
+        proxy_cache_background_update on;
+
+        # Передача URI без изменений
+        proxy_redirect off;
+        proxy_buffering off;
+    }
+
+    location /stat {
+        include uwsgi_params;
+        uwsgi_pass localhost:81;
+    }
+}
+
+server {
+    listen 80;
+    server_name _;
+    return 301 https://$host$request_uri;
+}
