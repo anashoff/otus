@@ -24,7 +24,7 @@
 
 Будем разворачивать 3 ВМ на ОС Ubuntu 22.04
 
-Подготовим [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson27/Vagrantfile)
+Подготовим [Vagrantfile](https://github.com/anashoff/otus/blob/master/lesson25/Vagrantfile)
 
 ```ruby
 # -*- mode: ruby -*-
@@ -71,7 +71,7 @@ end
 
 Модули Grafana и Loki будет развертываться в docker с помощью docker compose на хосте log
 
-На хост web устанавливается web-сервер angie и модуль сбора Alloy
+На хост web устанавливается web-сервер angie - форк nginx и модуль сбора Alloy
 
 Нв хост comp устанавливается модуль alloy
 
@@ -132,7 +132,7 @@ end
 └── ansible.cfg
 ```
 
-Файл конфигурации [ansible.cfg](https://github.com/anashoff/otus/blob/master/lesson27/ansible.cfg)
+Файл конфигурации [ansible.cfg](https://github.com/anashoff/otus/blob/master/lesson25/ansible.cfg)
 
 ```ini
 [defaults]
@@ -141,7 +141,7 @@ inventory = hosts
 remote_user = vagrant
 ```
 
-Файл настроек хостов [hosts.ini](https://github.com/anashoff/otus/blob/master/lesson27/hosts.ini)
+Файл настроек хостов [hosts.ini](https://github.com/anashoff/otus/blob/master/lesson25/hosts.ini)
 
 ```ini
 [all]
@@ -151,7 +151,7 @@ log ansible_port=22 ansible_host=192.168.57.11 ansible_ssh_private_key_file=./.v
 
 ```
 
-Файл плейбука [playbook.yaml](https://github.com/anashoff/otus/blob/master/lesson27/playbook.yaml)
+Файл плейбука [playbook.yml](https://github.com/anashoff/otus/blob/master/lesson25/playbook.yml)
 
 ```yml
 ---
@@ -186,15 +186,15 @@ log ansible_port=22 ansible_host=192.168.57.11 ansible_ssh_private_key_file=./.v
 2. install_web - настройка веб-сервера web 
 3. install_comp - настройка рабочей станции comp
 
-Файлы плейбука находятся на github
+Файлы плейбука находятся на [github](https://github.com/anashoff/otus/tree/master/lesson25/roles)
 
 Рассмотрим подробнее ключевые моменты
 
 На каждый хост сначала устанавливается набор вспомогательных утилит, auditd и настраивается синхронизация времени.
 
-Для настройки хоста log устанавливается и настраивается docker и docker compose, затем устанавливаются, настраиваются и запускаются контейнеры  Loki и Grafana
+Для настройки хоста **log** устанавливается и настраивается docker и docker compose, затем устанавливаются, настраиваются и запускаются контейнеры  Loki и Grafana
 
-Для настройки хоста web устанавливаются и настраивается  веб-сервер angie и сборщик Alloy.
+Для настройки хоста **web** устанавливаются и настраивается  веб-сервер angie и сборщик Alloy.
 
 Основная часть выполнения задания - правильная настройка конфигураций angie и alloy
 
@@ -209,7 +209,6 @@ user angie;
 worker_processes  auto;
 worker_rlimit_nofile 65536;
 
-error_log  /var/log/angie/error.log notice;
 pid        /run/angie.pid;
 
 events {
@@ -234,9 +233,9 @@ http {
                         'uct="$upstream_connect_time" urt="$upstream_response_time"';
 
 
-    access_log  syslog:server=127.0.0.1:55514,facility=local7,tag=angie_access,severity=info combined;
-    error_log syslog:server=127.0.0.1:55515,facility=local7,tag=angie_error;
-
+    access_log  syslog:server=127.0.0.1:55514,tag=angie_access,severity=info combined;
+    error_log syslog:server=127.0.0.1:55515,tag=angie_error;
+    error_log  /var/log/angie/error.log;
     sendfile        on;
     #tcp_nopush     on;
 
@@ -254,15 +253,15 @@ http {
 
 параметр 
 
-```error_log  /var/log/angie/error.log notice;```
+```error_log  /var/log/angie/error.log;```
 
-Сохраняет критические логи на локаьный сервер 
+Сохраняет критические логи на локальный сервер 
 
-```access_log  syslog:server=127.0.0.1:55514,facility=local7,tag=angie_access,severity=info combined;```
+```access_log  syslog:server=127.0.0.1:55514,tag=angie_access,severity=info combined;```
 
 Отправляет access-логи в сокет сборщика логов alloy.
 
-```error_log syslog:server=127.0.0.1:55515,facility=local7,tag=angie_error;```
+```error_log syslog:server=127.0.0.1:55515,tag=angie_error;```
 
 Отправляет критические логи в сокет сборщика логов alloy
 
@@ -271,7 +270,7 @@ http {
 
 Файл конфигурации alloy
 
-[alloy_config.alloy.conf.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_web/templates/alloy_config.alloy.conf.j2)
+[alloy_config.alloy.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_web/templates/alloy_config.alloy.j2)
 
 ```ruby
 local.file_match "audit_files" {
@@ -352,6 +351,7 @@ local.file_match "audit_files" {
      sync_period = "5s"
  }
 ```
+
 находит файлы в локальной файловой системе с помощью шаблонов поиска, в нашем случае файл audit.log
 
 блок loki.source.file 
@@ -378,6 +378,7 @@ loki.process "audit" {
   }
 }
 ```
+
 блок ставит на записи лога кастомные метки - это нам пригодится для удобного представления логов в grafana, и передает их дальше в блок write.recierver для отправки в loki. Этот блок рассмотрим чуть позже.
 
 Блок 
@@ -416,6 +417,7 @@ loki.source.syslog "angie" {
      forward_to = [loki.write.loki.receiver]
 }
 ```
+
 прослушивает сообщения системного журнала по заданным TCP и UDP сокетам и пересылает их в блок write.recierver для отправки в loki. Сокеты создаются при запуске сервиса alloy. Эти сокеты мы указывали в конфигурации angie для отправки в них логов. Передаваемые сообщения настрены на соответствие протоколу системного журнала BSD RFC3164. Также настроены метки angie_access и angie_error для для удобного представления логов в grafana.
 
 И наконец блок
@@ -436,7 +438,7 @@ loki.write "loki" {
 
 файл конфигурации alloy будет немного отличаться от предыдущего
 
-[alloy_config.alloy.conf.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_comp/templates/alloy_config.alloy.conf.j2)
+[alloy_config.alloy.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_comp/templates/alloy_config.alloy.j2)
 
 ```ruby
 loki.relabel "journal" {
@@ -461,13 +463,11 @@ loki.write "loki" {
 }
 ```
 
-в графическом виде конвейр выглядит так
+в графическом виде конвейер выглядит так
 
 ![pict2](pict/2.png)
 
-
-
-Блок передачи логов точно такой же как и у web.
+Блок передачи логов loki.write точно такой же как и у web.
 
 А для сбора используется блок loki.source.journal
 
@@ -520,7 +520,7 @@ loki.relabel "journal" {
 
 ![pict3](pict/3.png)
 
-Здесь в поле audit журнас аудита с хоста web, а в поле loki.source.journal.comp_journal - логи журнала systemd с хоста comp
+Здесь в поле audit журнал аудита с хоста web, а в поле loki.source.journal.comp_journal - логи журнала systemd с хоста comp
 
 Получим логи веб-сервера. Перейдем по адресу 
 
