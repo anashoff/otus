@@ -204,7 +204,7 @@ log ansible_port=22 ansible_host=192.168.57.11 ansible_ssh_private_key_file=./.v
 
 Для настройки сервера loki используются файлы
 
-Файл docker compose
+Файл docker compose. Нужен для развертывания контейнеров Grafana - Loki
 
 [docker-compose.yml.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_log/templates/docker-compose.yml.j2)
 
@@ -248,7 +248,7 @@ volumes:
   loki-data:
 ```
 
-Файл настройки loki
+Файл настройки loki. В нем прописываются параметры Loki
 
 [loki-config.yaml.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_log/templates/loki-config.yaml.j2)
 
@@ -294,7 +294,7 @@ storage_config:
     cache_location: /loki/cache
 ```
 
-Файл конфигурации источника данных Loki для провижининга в Grafana
+Файл конфигурации источника данных Loki для провижининга в Grafana. Нужен для автомитического создания источника данных Loki в Grafana
 
 [loki-datasource.yml.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_log/templates/loki-datasource.yml.j2)
 
