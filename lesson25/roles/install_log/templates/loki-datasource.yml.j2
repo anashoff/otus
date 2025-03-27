@@ -6,9 +6,6 @@ datasources:
   access: proxy
   url: http://192.168.57.11:3100
   jsonData:
+    timeout: 60
     maxLines: 1000
-    derivedFields:
-      - datasourceUid: prometheus
-        matcherRegex: (?:pod|container)=("?)([^"]*)\1
-        name: Prometheus
-        url: http://192.168.57.11:9090
+

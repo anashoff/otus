@@ -202,9 +202,114 @@ log ansible_port=22 ansible_host=192.168.57.11 ansible_ssh_private_key_file=./.v
 
 ### Хост log
 
+Для настройки сервера loki используются файлы
+
+Файл docker compose
+
+[docker-compose.yml.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_log/templates/docker-compose.yml.j2)
+
+```jinja
+version: '3.8'
+
+services:
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    networks:
+      - monitoring
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki-data:/loki
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./loki.yml:/etc/grafana/provisioning/datasources/loki.yml
+    networks:
+      - monitoring
+    environment:
+      - GF_FEATURE_TOGGLES_ENABLE=tempoSearch,lokiLive
+    restart: unless-stopped
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana-storage:
+  loki-data:
+```
+
+Файл настройки loki
+
+[loki-config.yaml.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_log/templates/loki-config.yaml.j2)
 
 
+```jinja
+auth_enabled: false
 
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: debug
+  grpc_server_max_concurrent_streams: 1000
+
+common:
+  instance_addr: 0.0.0.0  # Важно для Docker!
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+limits_config:
+  allow_structured_metadata: true
+  volume_enabled: true
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  tsdb_shipper:
+    active_index_directory: /loki/index
+    cache_location: /loki/cache
+```
+
+Файл конфигурации источника данных Loki для провижининга в Grafana
+
+[loki-datasource.yml.j2](https://github.com/anashoff/otus/blob/master/lesson25/roles/install_log/templates/loki-datasource.yml.j2)
+
+```jinja
+apiVersion: 1
+
+datasources:
+- name: Loki
+  type: loki
+  access: proxy
+  url: http://192.168.57.11:3100
+  jsonData:
+    timeout: 60
+    maxLines: 1000
+```
 
 
 ### Хост web
