@@ -1,1 +1,0 @@
-ansible -m ping all
