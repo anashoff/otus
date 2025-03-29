@@ -105,6 +105,24 @@
     dest: "{{ compose_dir }}/loki-config.yaml"
     mode: 0644
 
+- name: Передача источника данных Loki для Grafana
+  template:
+    src: loki-datasource.yml.j2
+    dest: "{{ compose_dir }}/loki.yml"
+    mode: 0644
+- name: Передача источника данных Postgresql для Grafana
+  template:
+    src: postgresql53.yml.j2
+    dest: "{{ compose_dir }}/postgresql53.yml"
+    mode: 0644
+- name: Передача источника данных Postgresql для Grafana
+  template:
+    src: postgresql54.yml.j2
+    dest: "{{ compose_dir }}/postgresql54.yml"
+    mode: 0644
+
+
+
 - name: Передача настроек провиженинга дашборда Grafana
   template:
     src: dashboard.yml.j2

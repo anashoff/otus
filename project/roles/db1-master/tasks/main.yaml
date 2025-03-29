@@ -13,3 +13,4 @@
 - include_tasks: ../../common/tasks/install_pgsql_common.yml
 - include_tasks: ../../common/tasks/install_pgsql_master.yml
 
+

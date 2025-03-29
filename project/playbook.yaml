@@ -36,7 +36,7 @@
   gather_facts: true
   become: yes
   roles:
-#    - db1-master
+    - db1-master
   tags: db1
 
 - name: Развертывание хоста database-2
@@ -46,6 +46,5 @@
   roles:
     - db2-slave
   tags: db2
-
 ...
 

@@ -1,26 +1,57 @@
-local.file_match "local_files" {
-     path_targets = [{ "__path__" = "/var/log/**/*.log"}]
+
+local.file_match "audit_files" {
+     path_targets = [{ "__path__" = "/var/log/audit/audit.log"}]
      sync_period = "5s"
  }
 
-loki.source.file "log_scrape" {
-    targets    = local.file_match.local_files.targets
-    forward_to = [loki.write.loki.receiver]
+loki.source.file "audit" {
+    targets    = local.file_match.audit_files.targets
+    forward_to = [loki.process.audit.receiver]
     tail_from_end = true
   }
 
-loki.relabel "journal" {
-  forward_to = []
-  rule {
-    source_labels = ["__journal__systemd_unit"]
-    target_label  = "unit"
+loki.process "audit" {
+    forward_to =  [loki.write.loki.receiver]
+
+    stage.static_labels {
+      values = {
+        job  = "audit",
+        service_name = "audit",
+    }
   }
 }
 
-loki.source.journal "{{ansible_facts.hostname}}_journal" {
+loki.source.syslog "angie" {
+    listener {
+       address = "127.0.0.1:55514"
+       protocol = "tcp"
+       labels = { job = "frontend_access" }
+       syslog_format = "rfc3164"
 
-    relabel_rules = loki.relabel.journal.rules
-    forward_to =  [loki.write.loki.receiver]
+     }
+
+    listener {
+       address = "127.0.0.1:55514"
+       protocol = "udp"
+       labels = { job = "frontend_access" }
+       syslog_format = "rfc3164"
+    }
+    listener {
+       address = "127.0.0.1:55515"
+       protocol = "tcp"
+       labels = { job = "frontend_error" }
+       syslog_format = "rfc3164"
+
+     }
+
+    listener {
+       address = "127.0.0.1:55515"
+       protocol = "udp"
+       labels = { job = "frontend_error" }
+       syslog_format = "rfc3164"
+    }
+
+     forward_to = [loki.write.loki.receiver]
 }
 
 
@@ -29,5 +60,3 @@ loki.write "loki" {
                 url = "http://192.168.1.56:3100/loki/api/v1/push"
         }
 }
-
-

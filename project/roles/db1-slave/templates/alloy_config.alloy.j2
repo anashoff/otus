@@ -1,33 +1,44 @@
-local.file_match "local_files" {
-     path_targets = [{ "__path__" = "/var/log/**/*.log"}]
+local.file_match "audit_files" {
+     path_targets = [{ "__path__" = "/var/log/audit/audit.log"}]
      sync_period = "5s"
  }
 
-loki.source.file "log_scrape" {
-    targets    = local.file_match.local_files.targets
-    forward_to = [loki.write.loki.receiver]
+loki.source.file "audit" {
+    targets    = local.file_match.audit_files.targets
+    forward_to = [loki.process.audit.receiver]
     tail_from_end = true
   }
 
-loki.relabel "journal" {
-  forward_to = []
-  rule {
-    source_labels = ["__journal__systemd_unit"]
-    target_label  = "unit"
+loki.process "audit" {
+    forward_to =  [loki.write.loki.receiver]
+
+    stage.static_labels {
+      values = {
+        job  = "audit",
+        service_name = "audit",
+    }
   }
 }
 
-loki.source.journal "{{ansible_facts.hostname}}_journal" {
+loki.source.file "postgres" {
+    targets    = [{ "__path__" = "/var/log/postgresql/postgresql-14-main.log"}]
+    forward_to = [loki.process.postgres.receiver]
+    tail_from_end = true
+  }
 
-    relabel_rules = loki.relabel.journal.rules
+loki.process "postgres" {
     forward_to =  [loki.write.loki.receiver]
-}
 
+    stage.static_labels {
+      values = {
+        job  = "postgres",
+        service_name = "postgres",
+    }
+  }
+}
 
 loki.write "loki" {
         endpoint {
                 url = "http://192.168.1.56:3100/loki/api/v1/push"
         }
 }
-
-

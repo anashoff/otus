@@ -26,6 +26,8 @@ http {
                         'uct="$upstream_connect_time" urt="$upstream_response_time"';
 
     access_log  /var/log/angie/access.log  main;
+    access_log  syslog:server=127.0.0.1:55514,tag=angie_access,severity=info combined;
+    error_log syslog:server=127.0.0.1:55515,tag=angie_error;
 
     sendfile        on;
     #tcp_nopush     on;

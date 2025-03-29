@@ -11,5 +11,6 @@
       - curl
       - gpg
       - ca-certificates
+      - auditd
     update_cache: true
     state: latest

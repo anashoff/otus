@@ -5,6 +5,8 @@ server {
     server_name  _;
 
     access_log  /var/log/angie/host.access.log  main;
+    access_log  syslog:server=127.0.0.1:55514,tag=angie_access,severity=info combined;
+    error_log syslog:server=127.0.0.1:55515,tag=angie_error;
 
     location / {
         root   /usr/share/angie/html;

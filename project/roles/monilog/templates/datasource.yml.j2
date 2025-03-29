@@ -6,5 +6,55 @@ datasources:
     access: proxy
     url: http://192.168.1.56:9090
     isDefault: true  # Сделать источником по умолчанию
+    uid: prometheusdatasource
     jsonData:
     version: 1
+
+  - name: postgresql53
+    type: postgres
+    access: proxy
+    url: 192.168.1.53:5432
+    database: postgres
+    user: lims
+    secureJsonData:
+      password: qq1qq2qq3
+    uid: postgresql53datasources
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+      postgresVersion: 1400
+      timescaledb: false
+    editable: true
+  - name: postgresql54
+    type: grafana-postgresql-datasource
+    access: proxy
+    url: 192.168.1.54:5432
+    uid: postgresql54datasources
+    database: postgres
+    user: lims
+    secureJsonData:
+      password: qq1qq2qq3
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+      postgresVersion: 1400
+      timescaledb: false
+    editable: true
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://192.168.1.56:3100
+    uid: lokidatasource 
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: prometheusdatasource
+          matcherRegex: (?:pod|container)=("?)([^"]*)\1
+          name: Prometheus
+          url: http://192.168.1.56:9090

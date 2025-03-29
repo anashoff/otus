@@ -56,8 +56,10 @@ services:
       - "3000:3000"
     volumes:
       - grafana-storage:/var/lib/grafana
-      - ./loki.yml:/etc/grafana/provisioning/datasources/loki.yml
       - ./datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
+      - ./dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json
+      
     networks:
       - monitoring
     environment:

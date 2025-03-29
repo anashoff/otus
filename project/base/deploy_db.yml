@@ -1,0 +1,50 @@
+---
+- name: Restore PostgreSQL from physical backup
+  hosts: all
+  become: yes
+  gather_facts: true
+  vars:
+    - pg_data_dir: "/storage/postgres/"
+    - pg_backup_path: "../files/base.tar.gz"
+    - postgres_service: "postgresql"
+    - wal_archive: "../files/pg_wal.tar.gz"
+
+
+  tasks:
+    - name: Остановка службы PostgreSQL 
+      ansible.builtin.service:
+        name: postgresql
+        state: stopped
+
+    - name: Удаление каталога с базой данных
+      ansible.builtin.file:
+        path: "{{ pg_data_dir }}"
+        state: absent
+
+    - name: Создание каталога базы данных
+      ansible.builtin.file:
+        path: "{{ pg_data_dir }}"
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: '0700'
+
+    - name: Распаковка базы данных
+      ansible.builtin.unarchive:
+        src: "{{ pg_backup_path }}"
+        dest: "{{ pg_data_dir }}"
+        owner: postgres
+        group: postgres
+
+    - name: Актуализация журнала транзакций
+      ansible.builtin.unarchive:
+        src: "{{ wal_archive }}"
+        dest: "{{ pg_data_dir }}/pg_wal/"
+        owner: postgres
+        group: postgres
+
+    - name: Запуск службы PostgreSQL
+      ansible.builtin.service:
+        name: "{{ postgres_service }}"
+        state: started
+

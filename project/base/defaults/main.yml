@@ -1,0 +1,6 @@
+postgres_version: 14
+pg_data_dir: "/storage/postgres/"
+pg_backup_path: "../files/base.tar.gz"
+postgres_service: "postgresql"
+wal_archive_dir: "/backup/wal"
+recovery_target_time: "2023-12-31 23:59:59"

@@ -10,6 +10,38 @@
 - include_tasks: ../../common/tasks/install_alloy.yml
 ##### Установка angie для логгирования
 - include_tasks: ../../common/tasks/install_angie.yml
+##### Настройка UFW
+- name: Allow everything and enable UFW
+  community.general.ufw:
+    state: enabled
+    policy: allow
+- name: Allow SSH
+  community.general.ufw:
+    rule: allow
+    port: 22
+- name: Allow HTTP
+  community.general.ufw:
+    rule: allow
+    port: 80
+- name: Allow HTTPS
+  community.general.ufw:
+    rule: allow
+    port: 443
+- name: Allow PostgreSQL
+  community.general.ufw:
+    rule: allow
+    port: 5432
+- name: Allow 9100
+  community.general.ufw:
+    rule: allow
+    port: 9100
+- name: Allow everything and enable UFW
+  community.general.ufw:
+    policy: deny
+
+
+
+
 ##### Настройка балансировщика angie
 - name: Создание каталога Angie для конфигурации сайтов
   file:
