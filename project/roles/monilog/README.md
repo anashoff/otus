@@ -1,30 +1,30 @@
 # Administrator Linux. Professional
 
-## Сервер фронтенда 
+## Сервер мониторинга и сбора логов
 
 Требования, предъявляемые к серверу
 
-Виртуальная машина с установленным веб-сервером, обеспечивает функционал:
+Виртуальная машина обеспечивает функционал:
 
-- Проксирование и балансировка HTTP
-- Проксирование запросов к базе данных
-- Использование SSL - сертификата
-- Файрвол
-- Передача метрик и логов на центральный сервер сбора логов
+- Централизованный сбор метрик и логов
+- передачу алертов в Telegram
+- Отображение метрик и логов на дашбордах
 
 ### Описание сервера
 
-В качестве сервера используется виртуальная машина с установленной Ubuntu 22.04.
+В качестве сервера используется виртуальная машина с установленной Ubuntu 22.04. 
 
 Сервер разворачивается с помощью **vagrant и ansible**.
 
-В качестве веб-сервера, прокси, балансировщика HTTP и L4 используется **angie**
+Для сбора метрик использовется связка **Prometheus - Node Exporter**
 
-SSL-сертификат в данной работе испольуется самоподписной
+Алерты выполняет **alertmanager**
 
-На сервере включен файрвол **ufw**
+Для сбора логов используется **Loki**
 
-Для сбора и передачи метрик используется **node exporter**, для сбора и передачи логов - **grafana alloy**
+Для отображения дашбордов используется **Grafana**. Для автоматической настройки Grafana используется провижионинг настроек источников данных Prometheus, Loki, Postgresql, и преднастроенного дашборда.
+
+Все необходимые сервисы развертываются в docker с помощью docker compose, что в основном обусловлено доступностью нужных приложений в РФ.
 
 ### Развертывание среды выполнения
 
@@ -32,7 +32,7 @@ SSL-сертификат в данной работе испольуется с�
 
 Далее развертывание продолжается при выполнении роли ansible
 
- [web](https://github.com/anashoff/otus/blob/master/project/roles/web/tasks/main.yaml)
+ [monilog](https://github.com/anashoff/otus/blob/master/project/roles/monilog/tasks/main.yaml)
 
 ```yaml
 ---
@@ -40,94 +40,134 @@ SSL-сертификат в данной работе испольуется с�
 - include_tasks: ../../common/tasks/install_utils.yml
 ##### Настройка времени
 - include_tasks: ../../common/tasks/setup_time.yml
-##### Установка node exporter для мониторинга
-- include_tasks: ../../common/tasks/install_node_exp.yml
-  ignore_errors: true
-##### Установка alloy для логгирования
-- include_tasks: ../../common/tasks/install_alloy.yml
-##### Установка angie для логгирования
-- include_tasks: ../../common/tasks/install_angie.yml
-##### Настройка UFW
-- name: Включаем UFW
-  community.general.ufw:
-    state: enabled
-    policy: allow
-- name: Разрешаем порт SSH
-  community.general.ufw:
-    rule: allow
-    port: 22
-- name: Разрешаем порт HTTP
-  community.general.ufw:
-    rule: allow
-    port: 80
-- name: Разрешаем порт HTTPS
-  community.general.ufw:
-    rule: allow
-    port: 443
-- name: Разрешаем порт PostgreSQL
-  community.general.ufw:
-    rule: allow
-    port: 5432
-- name: Разрешаем порт 9100
-  community.general.ufw:
-    rule: allow
-    port: 9100
-- name: Заперщаем остальное
-  community.general.ufw:
-    policy: deny
 
-##### Настройка балансировщика angie
-- name: Создание каталога Angie для конфигурации сайтов
+#####  Установка docker
+- name: Очистка старых версий Docker
+  apt:
+    name: "{{ item }}"
+    state: absent
+    purge: yes
+  loop:
+    - docker.io
+    - docker-doc
+    - docker-compose
+    - podman-docker
+    - containerd
+    - runc
+  ignore_errors: yes
+- name: Установка вспомогательных утилит
+  apt:
+    name:
+      - gnupg
+    state: present
+    update_cache: yes
+- name: Создание каталога для ключа репозитория
   file:
-    path: "/etc/angie/site-enabled"
-    state: directory
-    mode: 0755
-- name: Создание каталога Angie для конфигурации stream
-  file:
-    path: "/etc/angie/stream-enabled"
-    state: directory
-    mode: 0755
-- name: Передача конфигурации Angie
-  template:
-    src: "angie.conf.j2"
-    dest: "/etc/angie/angie.conf"
-    mode: 0644
-- name: Передача конфигурации прокси сайтов Angie
-  template:
-    src: "balance.conf.j2"
-    dest: "/etc/angie/site-enabled/balance.conf"
-    mode: 0644
-- name: Передача конфигурации прокси L4
-  template:
-    src: "pgstream.conf.j2"
-    dest: "/etc/angie/stream-enabled/pgstream.conf"
-    mode: 0644
-
-- name: Создание каталога для SSL  сертификата
-  ansible.builtin.file:
-    path: "{{ cert_path }}"
+    path: /etc/apt/keyrings
     state: directory
     mode: '0755'
-
-- name: Генерация приватного SSL ключа
-  community.crypto.openssl_privatekey:
-    path: "{{ cert_path }}/selfsigned.key"
-    type: RSA
-    size: 2048
-    mode: '0600'
-
-- name: Генерация самоподписного сертификата
-  community.crypto.x509_certificate:
-    path: "{{ cert_path }}/selfsigned.crt"
-    privatekey_path: "{{ cert_path }}/selfsigned.key"
-    provider: selfsigned
-    selfsigned_not_after: "+3650d"
+- name: Загрузка ключа  Docker GPG
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
     mode: '0644'
+- name: Добавление репозитория Docker
+  apt_repository:
+    repo: >-
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu
+      {{ ansible_facts.lsb.codename }}
+      stable
+    state: present
+    filename: docker
+    update_cache: yes
+- name: Установка Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: latest
+    update_cache: yes
+- name: Запуск сервиса Docker  
+  service:
+    name: docker
+    state: started
+    enabled: yes
 
-- name: Перезагрузка Angie
-  systemd:
-    name: angie
-    state: reloaded
+##### Установка Prometheus, Grafana...
+- name: Создание каталога для docker compose
+  file:
+    path: "{{ compose_dir }}"
+    state: directory
+    mode: 0755
+
+- name: Передача настроек Prometheus
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ compose_dir }}/{{ prometheus_config }}"
+    mode: 0644
+
+- name: Передача настроек источников данных  Prometheus
+  template:
+    src: datasource.yml.j2
+    dest: "{{ compose_dir }}/datasource.yml"
+    mode: 0644
+
+- name: Передача настроек Alertmanager
+  template:
+    src: alertmanager.yml.j2
+    dest: "{{ compose_dir }}/{{ alertmanager_config }}"
+    mode: 0644
+
+- name: Передача настроек бота Telegram
+  template:
+    src: telegram.tmpl.j2
+    dest: "{{ compose_dir }}/{{ telegram_template }}"
+    mode: 0644
+
+- name: Передача настроек правил алертов
+  template:
+    src: alert.rules.yml.j2
+    dest: "{{ compose_dir }}/{{ alert_rules }}"
+    mode: 0644
+
+- name: Передача настроек Loki
+  template:
+    src: loki-config.yaml.j2
+    dest: "{{ compose_dir }}/loki-config.yaml"
+    mode: 0644
+
+- name: Передача настроек провиженинга дашборда Grafana
+  template:
+    src: dashboard.yml.j2
+    dest: "{{ compose_dir }}/dashboard.yml"
+    mode: 0644  
+
+- name: Передача дашборда Grafana
+  template:
+    src: dashboard.json.j2
+    dest: "{{ compose_dir }}/dashboard.json"
+    mode: 0644  
+
+##### Запуск docker compose
+- name: Передача файла Docker Compose
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ compose_dir }}/docker-compose.yml"
+    mode: 0644
+  notify: Restart stack
+
+- name: Запуск контейнеров Docker Compose
+  command: docker compose -f docker-compose.yml up -d
+  args:
+    chdir: "{{ compose_dir }}"
+  register: compose_output
+  changed_when:
+    - "'Creating' in compose_output.stdout"
+    - or "'Recreating' in compose_output.stdout"
 ```
 
 Задачи с директивами include tasks описаны в разделе [Общие задачи](https://github.com/anashoff/otus/tree/master/project/roles/common#readme) 
