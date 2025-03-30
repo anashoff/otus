@@ -1,6 +1,6 @@
 # Administrator Linux. Professional
 
-## Сервер базы данных-2 в режиме реплики
+## Сервер базы данных-1 в режиме реплики
 
 ### Требования, предъявляемые к серверу
 
@@ -18,7 +18,7 @@
 
 В качестве СУБД используется **PostgreSQL 14**
 
-Для резервирования базы данных настроена физическая репликация базы с первого сервера БД
+Для резервирования базы данных настроена физическая репликация базы со второго сервера БД
 
 Для сбора и передачи метрик используется **node exporter**, для сбора и передачи логов - **grafana alloy**
 
@@ -33,6 +33,7 @@
  [db2](https://github.com/anashoff/otus/blob/master/project/roles/db2-slave/tasks/main.yaml)
 
 ```yaml
+---
 ##### Установка утилит
 - include_tasks: ../../common/tasks/install_utils.yml
 ##### Настройка времени
@@ -40,7 +41,6 @@
 ##### Установка node exporter для мониторинга
 - include_tasks: ../../common/tasks/install_node_exp.yml
   ignore_errors: true
-
 ##### Установка alloy для логгирования
 - include_tasks: ../../common/tasks/install_alloy.yml
 ##### Установка PostgreSQL
@@ -214,20 +214,22 @@ loki.write "loki" {
 
 ### Работа с сервером
 
-Запуск сервера происходит при выполнении [Vagrantfile](https://github.com/anashoff/otus/blob/master/project/Vagrantfile) в составе всего стенда или отдельно по команде
+Запуск сервера выполняется для восстановления работоспособности стенда после устранения сбоя сервера баз данных DB-1. При этом сервер DB-2 работает в режиме мастера. 
 
-```vagrant up db2```
+Дла запеска сервера выполняется команда
 
-Настройка серера выполняеться в составе всего стенда или одельно по команде
+```vagrant up db1```
 
-```ansible-pleybook playbook.yml --tag db2```
+Настройка серера выполняеться по команде
 
-Общее время развертывания сервера ~ 5 минут.
+```ansible-pleybook start_db1_as_slave.yaml```
+
+Общее время развертывания сервера ~ 7 минут.
 
 Выключение сервера 
 
-```vagrant halt db2```
+```vagrant halt db1```
 
 Стирание виртуальной машины
 
-```vagrant destroy db2```
+```vagrant destroy db1```

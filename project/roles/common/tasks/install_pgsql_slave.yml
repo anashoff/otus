@@ -9,7 +9,7 @@
   file:
     path: "{{ pg_data_dir }}"
     state: absent
-- name: Копируем данные с мастера db1 на реплику db2
+- name: Копируем данные с мастера db1 на реплику db2. Процесс занимает около 4 минут. Спасибо за понимание.
   become_user: postgres
   expect:
     command: 'pg_basebackup -h 192.168.1.53 -U repluser -p 5432 -D "{{ pg_data_dir }}" -R -P -v'
