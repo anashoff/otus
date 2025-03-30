@@ -11,6 +11,7 @@
 - include_tasks: ../../common/tasks/install_alloy.yml
 ##### Установка PostgreSQL
 - include_tasks: ../../common/tasks/install_pgsql_common.yml
+##### Настройка как мастер сервер
 - include_tasks: ../../common/tasks/install_pgsql_master.yml
 
 
