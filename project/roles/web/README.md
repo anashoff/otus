@@ -32,7 +32,7 @@ SSL-сертификат в данной работе испольуется с�
 
 Далее развертывание продолжается при выполнении роли ansible
 
- [web](https://github.com/anashoff/otus/blob/master/project/roles/web/tasks/main.yaml)
+[web](https://github.com/anashoff/otus/blob/master/project/roles/web/tasks/main.yaml)
 
 ```yaml
 ---
