@@ -188,7 +188,7 @@ stream {
 
  Из особенностей - настраивается логирование в локальные файлы и в сокет grafana alloy для передачи на сервер loki. Конфигурация HTTP и stream загружается из дополнительных файлов, находящихся в отдельных каталогах.
 
-Конфигурация HTTP-прокси. 
+Конфигурация HTTP. 
 
 [balance.conf.j2](https://github.com/anashoff/otus/blob/master/project/roles/web/templates/balance.conf.j2)
 
