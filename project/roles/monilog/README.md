@@ -597,3 +597,4 @@ telegram_configs:
 Пример вида алерта
 
 ![pict1](pict/1.png)
+
