@@ -275,8 +275,8 @@ end
   hosts: db1
   become: yes
   vars:
-    postgres_user: lims
-    postgres_password: "qq1qq2qq3"
+    postgres_user: ********
+    postgres_password: "*********"
     postgres_db: postgres
     postgres_port: 5432
 
@@ -306,7 +306,7 @@ end
       state: reloaded
 ```
 
-[promote_db1.yml](https://github.com/anashoff/otus/blob/master/project/promote_db2.yml)
+[promote_db2.yml](https://github.com/anashoff/otus/blob/master/project/promote_db2.yml)
 
 ```yaml
 ---
@@ -314,8 +314,8 @@ end
   hosts: db2
   become: yes
   vars:
-    postgres_user: lims
-    postgres_password: "qq1qq2qq3"
+    postgres_user: ******
+    postgres_password: "*******"
     postgres_db: postgres
     postgres_port: 5432
 
