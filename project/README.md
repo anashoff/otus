@@ -185,10 +185,10 @@ end
 - [angie1](https://github.com/anashoff/otus/blob/master/project/roles/angie1/README.md) -Сервер бекенда 1
 - [angie2](https://github.com/anashoff/otus/blob/master/project/roles/angie2/README.md) - Сервер бекенда 2
 - [db1-master](https://github.com/anashoff/otus/blob/master/project/roles/db1-master/README.md) - Сервер базы данных-1 в режиме мастера
+- [db1-slave](https://github.com/anashoff/otus/blob/master/project/roles/db1-slave/README.md) - Сервер базы данных-1 в режиме реплики
 - [db2-slave](https://github.com/anashoff/otus/blob/master/project/roles/db2-slave/README.md) - Сервер базы данных-2 в режиме реплики
 
-
-Кроме основного плейбука в рабооте используются вспомогательные
+Кроме основного плейбука в работе используются вспомогательные
 
 - deploy_db.yml - первоначальное развертывание базы данных
 - start_db1_as_slave.yaml - настраивает сервер database-1 как реплику
